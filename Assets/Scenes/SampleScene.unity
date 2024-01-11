@@ -375,7 +375,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: aa6ea2a9269970a4a86a51007b694fda, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  moveSpeed: 5
+  playerStats: {fileID: 0}
 --- !u!61 &984002697
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -527,6 +527,8 @@ GameObject:
   - component: {fileID: 1411852379}
   - component: {fileID: 1411852378}
   - component: {fileID: 1411852377}
+  - component: {fileID: 1411852382}
+  - component: {fileID: 1411852381}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -674,6 +676,34 @@ Transform:
   - {fileID: 92225017}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1411852381
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1411852376}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f7e03595af54a0347ac1056513ab89eb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  moveSpeed: 5
+  jumpForce: 10
+  attackDamage: 10
+--- !u!114 &1411852382
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1411852376}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aa6ea2a9269970a4a86a51007b694fda, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  playerStats: {fileID: 0}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
