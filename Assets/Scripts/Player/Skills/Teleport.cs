@@ -5,7 +5,10 @@ using UnityEngine;
 public class Teleport : MonoBehaviour
 {
     [Header("스킬 값")]
-    private float Teleport_value = 5f;
+    private float Teleport_value = 7f;
+    Vector2 moveDirection;
+    float moveX = 0f; //텔레포트 방향 지정
+    float moveY = 0f;
 
     [Header("쿨타임 관련 변수")]
     private float curTime = 0f; //쿨타임을 세는 변수
@@ -42,10 +45,14 @@ public class Teleport : MonoBehaviour
         {
             if (Input.GetKeyDown(KeyCode.E))
             {
+                moveDirection = new Vector2(Input.GetAxis("Horizontal"), Input.GetAxis("Vertical")).normalized;
+                moveX = moveDirection.x;
+                moveY = moveDirection.y;
                 player_Move.can_Move = false;
                 //Debug.Log("E 눌림 & curTime 0이하"); //체크 완료
                 animator_Skill.SetBool("Teleport", true); 
                 animator_Skill.SetBool("Teleport_End", false); 
+
                 curTime = coolTime; //curTime 에 coolTime 을 대입해서 if문 안돌게 만들고
             }
         }
@@ -66,16 +73,25 @@ public class Teleport : MonoBehaviour
     {
         animator_Skill.SetBool("Teleport", false);
         //Player.SetActive(true);
-        if (playerRenderer.flipX == false)
+        
+        if (moveX > 0) //고정적인 값으로 텔레포트를 위해서
         {
-            Player.transform.position = new Vector3(Player.transform.position.x + Teleport_value,
-                Player.transform.position.y, Player.transform.position.z); //앞을 보고 있을때(Flip.x == false) X + 값으로 이동시킴
+            moveX = 1;
         }
-        else if (playerRenderer.flipX == true)
+        else
         {
-            Player.transform.position = new Vector3(Player.transform.position.x - Teleport_value, Player.
-                transform.position.y, Player.transform.position.z); //뒤를 보고 있을때(Flip.x == true) X를 - 값으로 이동시킴
+            moveX = 0;
         }
+        if (moveY > 0)
+        {
+            moveY = 1;
+        }
+        else
+        {
+            moveY -= 1;
+        }
+            Player.transform.position = new Vector3(Player.transform.position.x + (Teleport_value * moveX),
+                Player.transform.position.y + (Teleport_value * moveY), Player.transform.position.z); //앞을 보고 있을때(Flip.x == false) X + 값으로 이동시킴
     }
     void Teleport_End()
     {
