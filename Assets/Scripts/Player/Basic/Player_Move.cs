@@ -1,7 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using static UnityEditor.PlayerSettings;
 
 public class Player_Move : MonoBehaviour
 {
@@ -14,12 +13,15 @@ public class Player_Move : MonoBehaviour
     private Player_Atk player_Atk;
 
     private SpriteRenderer spriteRenderer;
-    private bool isJump; //점프 가능 여부
-    
+
+    private bool isJump = true; // 점프 가능 여부 초기값을 true로 설정하여 시작부터 점프 가능하도록 함
+    private int jumpCount = 0; // 현재 점프 횟수
+    private int maxJumpCount = 2; // 최대 점프 횟수
 
     private bool prevMoveDirection; // 이전 움직임 방향 기억 변수
 
     [SerializeField] private string groundLayerName = "Ground"; //땅에 닿았는지 확인하기 위해서 이름 저장
+
     private void Start()
     {
         playerRb = GetComponent<Rigidbody2D>();
@@ -27,29 +29,28 @@ public class Player_Move : MonoBehaviour
         playerStats = GetComponent<PlayerStats>();
         player_Atk = GetComponent<Player_Atk>();
     }
+
     void Update()
     {
-        Horizontal_Move(); 
-        Jump();
+        if (can_Move)
+        {
+            Horizontal_Move();
+            Jump();
+        }
     }
+
     void Horizontal_Move()
     {
-        // playerStats가 null이 아닌 경우에만 moveSpeed 값을 가져와서 사용
-        if (playerStats != null && can_Move == true)
+        if (playerStats != null)
         {
             move_Speed = playerStats.moveSpeed;
-
-            // 키보드 입력을 통한 이동
             float horizontal = Input.GetAxis("Horizontal");
-
             bool currentMoveDirection = horizontal > 0f ? false : (horizontal < 0f ? true : prevMoveDirection);
-
 
             if (currentMoveDirection != prevMoveDirection)
             {
                 spriteRenderer.flipX = currentMoveDirection;
                 prevMoveDirection = currentMoveDirection;
-                // 플립될 때 pos.localPosition.x 값도 반전되도록 조정
                 if (spriteRenderer.flipX)
                 {
                     player_Atk.pos.localPosition = new Vector3(-Mathf.Abs(player_Atk.pos.localPosition.x), player_Atk.pos.localPosition.y, player_Atk.pos.localPosition.z);
@@ -59,25 +60,19 @@ public class Player_Move : MonoBehaviour
                     player_Atk.pos.localPosition = new Vector3(Mathf.Abs(player_Atk.pos.localPosition.x), player_Atk.pos.localPosition.y, player_Atk.pos.localPosition.z);
                 }
             }
-            Vector3 movement = new Vector3(horizontal, 0f, 0f) * move_Speed * Time.deltaTime;
 
-            // 현재 위치에서 이동 벡터를 더함
+            Vector3 movement = new Vector3(horizontal, 0f, 0f) * move_Speed * Time.deltaTime;
             transform.Translate(movement);
         }
     }
+
     void Jump()
     {
-        // playerStats가 null이 아닌 경우에만 jumpForce 값을 가져와서 사용
-        if (playerStats != null)
+        if (playerStats != null && Input.GetKeyDown(KeyCode.Space) && jumpCount < maxJumpCount)
         {
             jumpForce = playerStats.jumpForce;
-            //Debug.Log("점프력 : "+jumpForce); //체크 완료
-            //키보드
-            if (Input.GetKeyDown(KeyCode.Space) && isJump && can_Move)
-            {
-                playerRb.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
-                isJump = false;
-            }
+            playerRb.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
+            jumpCount++;
         }
     }
 
@@ -85,8 +80,8 @@ public class Player_Move : MonoBehaviour
     {
         if (collision.gameObject.layer == LayerMask.NameToLayer(groundLayerName))
         {
-            isJump = true; //땅에 닿았는지 확인
+            jumpCount = 0;
+            isJump = true; // 땅에 닿으면 점프 카운트를 리셋하고, 다시 점프할 수 있도록 설정
         }
     }
-
 }
