@@ -1,3 +1,2 @@
 # Auto detect text files and perform LF normalization
-* text=auto 
-* charset=utf-8
+* text=utf-8
