@@ -80,7 +80,7 @@ public class Teleport : MonoBehaviour
         }
         else
         {
-            moveX = 0;
+            moveX = -1;
         }
         if (moveY > 0)
         {
@@ -88,7 +88,7 @@ public class Teleport : MonoBehaviour
         }
         else
         {
-            moveY -= 1;
+            moveY = 0; // -1 바닥으로 떨어져서 일단 중단
         }
             Player.transform.position = new Vector3(Player.transform.position.x + (Teleport_value * moveX),
                 Player.transform.position.y + (Teleport_value * moveY), Player.transform.position.z); //앞을 보고 있을때(Flip.x == false) X + 값으로 이동시킴
