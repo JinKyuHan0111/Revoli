@@ -2,6 +2,11 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+public enum HitType{ //공격 형식에 대한 Enum
+    BasicAttack,
+    Skill_Prototype,
+    Etc //Etc 없애고 바꿔서 추가하면 됨
+}
 public class Player_Atk : MonoBehaviour
 {
     [Header("공격력")]
@@ -14,18 +19,49 @@ public class Player_Atk : MonoBehaviour
 
     [Header("공격판정 관련 변수")]
     public Transform pos;
-    public Vector2 CapsuleSize;
+    [SerializeField] private Vector2 CapsuleSize;
     public CapsuleDirection2D capsuleDirection = CapsuleDirection2D.Vertical;
+    float range_posX = 0f; //법위의 위치값
+    float range_posY = 0f;
 
 
     void Start()
     {
-        //playerStats = GetComponent<PlayerStats>();
+        playerStats = GetComponent<PlayerStats>();
     }
 
     void Update()
     {
         Atack();
+    }
+    void HitRange_Setting(HitType hitType)
+    {
+        switch(hitType) {
+            case HitType.BasicAttack: //basicAttack 의 공격법위 
+            {
+                HitRangeCalc(1, 2);
+                break;
+            }
+            case HitType.Skill_Prototype: //Skill_Prototype 의 공격법위 
+            {
+                HitRangeCalc(2, 4);
+                break;
+            }
+        }
+    }
+    void HitRangeCalc(float rangeX,float rangeY) //HitRangeCalc(범위 값 x,범위 값 y)
+    {
+        range_posX = 0.5f + rangeX / 2;
+        range_posY = -0.4f + ((rangeY - 2) / 2);
+        CapsuleSize = new Vector2(rangeX, rangeY);
+        if (pos.localPosition.x > 0)
+        {
+            pos.localPosition = new Vector3(range_posX, range_posY, pos.localPosition.z);
+        }
+        else
+        {
+            pos.localPosition = new Vector3(-range_posX, range_posY, pos.localPosition.z);
+        }
     }
     void Atack()
     {
@@ -33,7 +69,22 @@ public class Player_Atk : MonoBehaviour
         {
             if (Input.GetKeyDown(KeyCode.Q))
             {
-                playerStats = GetComponent<PlayerStats>();
+                HitRange_Setting(HitType.BasicAttack);
+
+                Atk_damage = playerStats.attackDamage;
+                //Debug.Log("Z버튼 누름 & curTime <=0 작동 완료"); //체크 완료
+                Collider2D[] collider2Ds = Physics2D.OverlapCapsuleAll(pos.position, CapsuleSize, capsuleDirection, transform.rotation.z);
+                foreach (Collider2D collider in collider2Ds)
+                {
+                    Debug.Log(collider.tag);
+                }
+                //animator.setTrigger("atk");
+                curTime = coolTime;
+            }
+            if (Input.GetKeyDown(KeyCode.W))
+            {
+                HitRange_Setting(HitType.Skill_Prototype);
+
                 Atk_damage = playerStats.attackDamage;
                 //Debug.Log("Z버튼 누름 & curTime <=0 작동 완료"); //체크 완료
                 Collider2D[] collider2Ds = Physics2D.OverlapCapsuleAll(pos.position, CapsuleSize, capsuleDirection, transform.rotation.z);
