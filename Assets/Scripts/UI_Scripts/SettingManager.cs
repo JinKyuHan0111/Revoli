@@ -22,7 +22,7 @@ public class SettingManager : MySingleton<SettingManager>
     {
         Bg_Panel.gameObject.SetActive(SettingPanel.gameObject.activeSelf);
     }
-    void OnClickSetting_On_Or_Close() //셋팅 버튼 닫기 버튼 클릭시 or Esc 버튼 누를시에 설정화면이 켜지거나 꺼진다.
+    public void OnClickSetting_On_Or_Close() //셋팅 버튼 닫기 버튼 클릭시 or Esc 버튼 누를시에 설정화면이 켜지거나 꺼진다.
     {
         if (SettingPanel.gameObject.activeSelf == true)
         {

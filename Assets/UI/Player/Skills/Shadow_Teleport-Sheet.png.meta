@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 527e9d8c74361cc4b9ee12eac63c4082
+guid: 067934f51570d2e4ca94f75dc810d13b
 TextureImporter:
   internalIDToNameTable: []
   externalObjects: {}
@@ -48,7 +48,7 @@ TextureImporter:
   spriteMeshType: 1
   alignment: 0
   spritePivot: {x: 0.5, y: 0.5}
-  spritePixelsToUnits: 25
+  spritePixelsToUnits: 28
   spriteBorder: {x: 0, y: 0, z: 0, w: 0}
   spriteGenerateFallbackPhysicsShape: 1
   alphaUsage: 1
@@ -124,8 +124,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: e6fbfee2ab20b5c46893df206eceabbc
-      internalID: 92904084
+      spriteID: 96ce5b843fbc2ec49867a7b7dc4215aa
+      internalID: 787242102
       vertices: []
       indices: 
       edges: []
@@ -145,8 +145,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 0d3073520499065489a18a19cd222f83
-      internalID: -1973946700
+      spriteID: bf91a6bd52418ec4fbd87c8dcc1ca74c
+      internalID: -653510843
       vertices: []
       indices: 
       edges: []
@@ -166,8 +166,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 7ba7c21e750302f499a5c5d21faf9b12
-      internalID: -982384768
+      spriteID: 5dc1d6db67cd7414eb0a1076c15f43a6
+      internalID: -1246715235
       vertices: []
       indices: 
       edges: []
@@ -187,8 +187,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: a24a84f9ea82d634ea8794e1c3070a3a
-      internalID: 1699767862
+      spriteID: f7ff07ec78e54af409ca08ef7192ad37
+      internalID: 806203123
       vertices: []
       indices: 
       edges: []
@@ -208,8 +208,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: ae88e49bf49cb2d4691208686e3b186b
-      internalID: 180070453
+      spriteID: 539b23b8d004f134784c8c93736caa87
+      internalID: 1572984248
       vertices: []
       indices: 
       edges: []
@@ -229,8 +229,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 96f503cbe6e9aab43a3b5829869bf570
-      internalID: 1044245700
+      spriteID: 03a5701b8659e9c41bf79e89c0c84cd2
+      internalID: -916539015
       vertices: []
       indices: 
       edges: []
@@ -250,8 +250,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 141f8ce23a77b2844b8c0c506968834c
-      internalID: -687050196
+      spriteID: 928e77715f4042a488276263f6e8f829
+      internalID: 71325735
       vertices: []
       indices: 
       edges: []
@@ -271,8 +271,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 4396237d11b75da4b82570a7d5d0e629
-      internalID: -1832093521
+      spriteID: fd5b37cfff97d0545b2af9ffe8ed9914
+      internalID: -1101010949
       vertices: []
       indices: 
       edges: []
@@ -292,8 +292,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: d270a2bd17e1875489d389273282420c
-      internalID: 1933748195
+      spriteID: 789978b9427ff2f479e510bb76a845dd
+      internalID: -1608403853
       vertices: []
       indices: 
       edges: []
@@ -309,15 +309,15 @@ TextureImporter:
     weights: []
     secondaryTextures: []
     nameFileIdTable:
-      Shadow_Teleport-Sheet_0: 92904084
-      Shadow_Teleport-Sheet_1: -1973946700
-      Shadow_Teleport-Sheet_2: -982384768
-      Shadow_Teleport-Sheet_3: 1699767862
-      Shadow_Teleport-Sheet_4: 180070453
-      Shadow_Teleport-Sheet_5: 1044245700
-      Shadow_Teleport-Sheet_6: -687050196
-      Shadow_Teleport-Sheet_7: -1832093521
-      Shadow_Teleport-Sheet_8: 1933748195
+      Shadow_Teleport-Sheet_0: 787242102
+      Shadow_Teleport-Sheet_1: -653510843
+      Shadow_Teleport-Sheet_2: -1246715235
+      Shadow_Teleport-Sheet_3: 806203123
+      Shadow_Teleport-Sheet_4: 1572984248
+      Shadow_Teleport-Sheet_5: -916539015
+      Shadow_Teleport-Sheet_6: 71325735
+      Shadow_Teleport-Sheet_7: -1101010949
+      Shadow_Teleport-Sheet_8: -1608403853
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
