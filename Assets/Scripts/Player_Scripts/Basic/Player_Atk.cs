@@ -42,7 +42,11 @@ public class Player_Atk : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.Q)& curTime <= 0)
         {
-            Attack();
+            Attack(HitType.BasicAttack);
+        }
+        if (Input.GetKeyDown(KeyCode.W) & curTime <= 0)
+        {
+            Attack(HitType.Skill_Prototype);
         }
     }
     void HitRange_Setting(HitType hitType)
@@ -50,21 +54,24 @@ public class Player_Atk : MonoBehaviour
         switch(hitType) {
             case HitType.BasicAttack: //basicAttack 의 공격법위 
             {
-                HitRangeCalc(1, 2);
+                CapsuleSize = new Vector2(1, 1.5f);
+                    range_posX = 0.18f;
+                    range_posY = 0f;
+                HitRangeCalc(HitType.BasicAttack); 
                 break;
             }
             case HitType.Skill_Prototype: //Skill_Prototype 의 공격법위 
             {
-                HitRangeCalc(2, 4);
+                CapsuleSize = new Vector2(2, 3f);
+                    range_posX = 0.28f;
+                    range_posY = 0.167f;
+                    HitRangeCalc(HitType.Skill_Prototype);
                 break;
             }
         }
     }
-    void HitRangeCalc(float rangeX,float rangeY) //HitRangeCalc(범위 값 x,범위 값 y)
+    void HitRangeCalc(HitType hitType) //HitRangeCalc(범위 값 x,범위 값 y)
     {
-        range_posX = 0.5f + rangeX / 2;
-        range_posY = -0.4f + ((rangeY - 2) / 2);
-        CapsuleSize = new Vector2(rangeX, rangeY);
         if (pos.localPosition.x > 0)
         {
             pos.localPosition = new Vector3(range_posX, range_posY, pos.localPosition.z);
@@ -74,10 +81,11 @@ public class Player_Atk : MonoBehaviour
             pos.localPosition = new Vector3(-range_posX, range_posY, pos.localPosition.z);
         }
     }
-    void Attack()
+    void Attack(HitType hitType)
     {
         AttackCount++;
-
+        if (hitType == HitType.BasicAttack)
+        {
             switch (AttackCount)
             {
                 case 1:
@@ -111,6 +119,9 @@ public class Player_Atk : MonoBehaviour
 
                     break;                   
             }
+        }
+    else if (hitType == HitType.Skill_Prototype)
+        {
             /*if (AttackCount == 1)
             {
                 player.isAttacking = true;
@@ -140,20 +151,19 @@ public class Player_Atk : MonoBehaviour
                 Invoke("DoubleAttack", 0.3f);
 
             }*/
-                if (Input.GetKeyDown(KeyCode.W))
-            {
-                HitRange_Setting(HitType.Skill_Prototype);
+            //if (Input.GetKeyDown(KeyCode.W))
+            HitRange_Setting(HitType.Skill_Prototype);
 
-                Atk_damage = playerStats.attackDamage;
-                //Debug.Log("Z버튼 누름 & curTime <=0 작동 완료"); //체크 완료
-                /*Collider2D[] collider2Ds = Physics2D.OverlapCapsuleAll(pos.position, CapsuleSize, capsuleDirection, transform.rotation.z);
-                foreach (Collider2D collider in collider2Ds)
-                {
-                    Debug.Log(collider.tag);
-                }*/
-                //animator.setTrigger("atk");
-                curTime = coolTime;
-            }
+            Atk_damage = playerStats.attackDamage;
+            //Debug.Log("Z버튼 누름 & curTime <=0 작동 완료"); //체크 완료
+            /*Collider2D[] collider2Ds = Physics2D.OverlapCapsuleAll(pos.position, CapsuleSize, capsuleDirection, transform.rotation.z);
+            foreach (Collider2D collider in collider2Ds)
+            {
+                Debug.Log(collider.tag);
+            }*/
+            //animator.setTrigger("atk");
+            curTime = coolTime;
+        }
         
         /*else
         {
@@ -166,7 +176,7 @@ public class Player_Atk : MonoBehaviour
     {
         Gizmos.color = Color.red;
         Gizmos.DrawWireCube(pos.position, CapsuleSize);
-
+        
     }
 
     void EndAttack()
