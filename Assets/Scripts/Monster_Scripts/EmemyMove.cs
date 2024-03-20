@@ -4,28 +4,30 @@ using UnityEngine;
 
 public class EnemyMove : MonoBehaviour
 {
-    public Transform target;
-    public GameObject targetObj;
-    public Vector2 targetPos;
+    private Transform target;
+    private GameObject targetObj;
+    private Vector2 targetPos;
     public float speed = 5f;
+    private PlayerStats playerStats;
+    private Health_Ctrl health_Ctrl;
     Rigidbody2D rigid;
-
+    
+    
+    Animator animator;
     SpriteRenderer spriteRenderer;
 
     // Start is called before the first frame update
     void Start()
     {
         rigid = GetComponent<Rigidbody2D>();
-        spriteRenderer = GetComponent<SpriteRenderer>();
+        animator = GetComponent<Animator>();
+        playerStats = GetComponent<PlayerStats>();
+        health_Ctrl = GetComponent<Health_Ctrl>();
+        rigid.gravityScale = 10f; // 중력 활성화
     }
 
     // Update is called once per frame
     void Update()
-    {
-        PlayerFind();
-    }
-
-    public void PlayerFind()
     {
         
     }
@@ -34,8 +36,9 @@ public class EnemyMove : MonoBehaviour
     {
         if (targetObj != null && targetObj.tag == "Player")
         {
-            Debug.Log("11");
+            //Debug.Log("11");
             Vector2 direction = (target.position - transform.position).normalized;
+            direction.y = 0f;
             rigid.MovePosition(rigid.position + direction * speed * Time.deltaTime);
             if (rigid.velocity.x > 0.1f)
             {
@@ -67,5 +70,13 @@ public class EnemyMove : MonoBehaviour
     public void ontriggerexit2d()
     {
         rigid.velocity = Vector2.zero; // 속도 초기화
+    }
+
+
+    public void OnCollisionEnter2D(Collision2D collision)
+    {
+        //충돌 시작 
+        Debug.Log("충돌 시작!");
+       
     }
 }
