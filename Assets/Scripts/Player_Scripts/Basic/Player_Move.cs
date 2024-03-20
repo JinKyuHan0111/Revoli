@@ -126,6 +126,7 @@ public class Player_Move : MonoBehaviour
 
         if(playerRb.velocity.y == 0) {
             anim.SetBool("isJumping", false);
+            jumpCount = 0;
         }
     }
 
@@ -134,17 +135,17 @@ public class Player_Move : MonoBehaviour
         //플레이어 콜라이더 전체가 Ground에 접촉시 더블점프 가능하게 하는것 방지
         if (collision.gameObject.layer == LayerMask.NameToLayer(groundLayerName) && playerRb.velocity.y < 0)
         {
-            jumpCount = 0;
             isJump = true;
             Debug.DrawRay(playerRb.position, Vector3.down, new Color(0, 1, 0));
-            RaycastHit2D rayHit = Physics2D.Raycast(playerRb.position, Vector3.down, 1, LayerMask.GetMask("Ground"));
+            RaycastHit2D rayHit = Physics2D.Raycast(playerRb.position, Vector3.down, 1.5f, LayerMask.GetMask("Ground"));
 
             if (rayHit.collider != null)
             {
                 if (rayHit.distance < 1)
                     /*Debug.Log(rayHit.collider.name);*/
                     anim.SetBool("isJumping", false);
-            }            
+                    jumpCount = 0;
+            }
         }
     }
 
