@@ -85,7 +85,7 @@ public class Player_Move : MonoBehaviour
                     playerRb.velocity = new Vector2(move_Speed * (-1), playerRb.velocity.y);
             }
             //애니메이션 처리
-            if (Mathf.Abs(playerRb.velocity.x) > 0.5)
+            if (Mathf.Abs(playerRb.velocity.x) > 3)
             {
                 anim.SetBool("isWalking", true);
             }
@@ -93,7 +93,6 @@ public class Player_Move : MonoBehaviour
             {
                 anim.SetBool("isWalking", false);
             }
-
         }
     }
         void OnDamaged()
@@ -124,6 +123,10 @@ public class Player_Move : MonoBehaviour
 
             // 다른 조건(예: 땅에 닿음)에서 중력 값을 원래대로 복원
         }
+
+        if(playerRb.velocity.y == 0) {
+            anim.SetBool("isJumping", false);
+        }
     }
 
     private void OnCollisionEnter2D(Collision2D collision)
@@ -134,17 +137,14 @@ public class Player_Move : MonoBehaviour
             jumpCount = 0;
             isJump = true;
             Debug.DrawRay(playerRb.position, Vector3.down, new Color(0, 1, 0));
-            RaycastHit2D rayHit = Physics2D.Raycast(playerRb.position, Vector3.down, 1, LayerMask.GetMask("Platform"));
+            RaycastHit2D rayHit = Physics2D.Raycast(playerRb.position, Vector3.down, 1, LayerMask.GetMask("Ground"));
 
             if (rayHit.collider != null)
             {
-                if (rayHit.distance < 0.5f)
+                if (rayHit.distance < 1)
                     /*Debug.Log(rayHit.collider.name);*/
                     anim.SetBool("isJumping", false);
-            }
-            anim.SetBool("isJumping", false);
-            
-            
+            }            
         }
     }
 
