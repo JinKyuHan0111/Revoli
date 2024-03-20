@@ -8,13 +8,16 @@ public class Player_Move : MonoBehaviour
     private float move_Speed = 0f; // 플레이어의 이동 속도를 저장하는 변수
     private float jumpForce = 0f; // 플레이어가 점프할 때 사용할 힘의 크기를 저장하는 변수
     public bool can_Move = true; // 플레이어가 움직일 수 있는지 여부를 나타내는 변수. 스킬 사용 중이나 다른 상황에서 움직임을 제한하고 싶을 때 false로 설정
-
+    GameManager gameManager;
     private Animator anim; //플레이어의 Animator 컴포넌트를 참조하기 위한 변수
     private PlayerStats playerStats; // 플레이어의 스탯을 관리하는 컴포넌트의 참조
     private Player_Atk player_Atk; // 플레이어의 공격을 관리하는 컴포넌트의 참조
+    CapsuleCollider2D capsuleCollider;
+    Health_Ctrl health;
+    public bool isAttacking = false; //공격시 움직임 멈추게 하기위한 변수
 
     private SpriteRenderer spriteRenderer; // 플레이어의 스프라이트를 관리하기 위한 컴포넌트 참조
-    
+    private int Look;//플레이어가 어느 위치를 바라보는지 알기 위한 변수
     private bool isJump = true; // 현재 점프 가능한 상태인지를 나타내는 변수, 초기값은 true로 설정하여 시작부터 점프 가능
     private int jumpCount = 0; // 현재 점프 횟수를 나타내는 변수
     private int maxJumpCount = 2; // 허용된 최대 점프 횟수를 나타내는 변수
@@ -32,6 +35,7 @@ public class Player_Move : MonoBehaviour
         playerStats = GetComponent<PlayerStats>();
         player_Atk = GetComponent<Player_Atk>();
         anim = GetComponent<Animator>();
+        gameManager = GetComponent<GameManager>();
     }
 
     void Update()
@@ -69,14 +73,17 @@ public class Player_Move : MonoBehaviour
                 }
             }
 
-            // 실제 이동 처리
-            playerRb.AddForce(Vector2.right * horizontal, ForceMode2D.Impulse);
+            
+            if (!isAttacking)
+            {
+                // 실제 이동 처리
+                playerRb.AddForce(Vector2.right * horizontal, ForceMode2D.Impulse);
 
-            if (playerRb.velocity.x > move_Speed)
-                playerRb.velocity = new Vector2(move_Speed, playerRb.velocity.y);
-            else if(playerRb.velocity.x < move_Speed*(-1))
-                playerRb.velocity = new Vector2(move_Speed*(-1), playerRb.velocity.y);
-
+                if (playerRb.velocity.x > move_Speed)
+                    playerRb.velocity = new Vector2(move_Speed, playerRb.velocity.y);
+                else if (playerRb.velocity.x < move_Speed * (-1))
+                    playerRb.velocity = new Vector2(move_Speed * (-1), playerRb.velocity.y);
+            }
             //애니메이션 처리
             if (Mathf.Abs(playerRb.velocity.x) > 0.5)
             {
@@ -89,6 +96,19 @@ public class Player_Move : MonoBehaviour
 
         }
     }
+        void OnDamaged()
+    {
+        //Heath Down
+        health.Take_Dmg(5f);// 임시 몬스터 피격 데미지(proto-type)
+
+        anim.SetTrigger("doDamaged");
+    }
+
+   void OnAttack()
+    {
+
+    }
+
    void Jump()
     {
         if (playerStats != null && Input.GetKeyDown(KeyCode.Space) && jumpCount < maxJumpCount)
@@ -98,11 +118,6 @@ public class Player_Move : MonoBehaviour
             //애니메이션 처리
             anim.SetBool("isJumping", true);
 
-            // 두 번째 점프 실행 시 중력 조절
-            if (jumpCount == 1) // 이미 한 번 점프한 상태에서 두 번째 점프를 할 때
-            {
-                playerRb.gravityScale += 0.5f; // 중력값 조절
-            }
             playerRb.velocity = new Vector2(playerRb.velocity.x, -0.5f); // 수직 속도 초기화
             playerRb.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
             jumpCount++;
@@ -113,12 +128,23 @@ public class Player_Move : MonoBehaviour
 
     private void OnCollisionEnter2D(Collision2D collision)
     {
-        if (collision.gameObject.layer == LayerMask.NameToLayer(groundLayerName))
+        //플레이어 콜라이더 전체가 Ground에 접촉시 더블점프 가능하게 하는것 방지
+        if (collision.gameObject.layer == LayerMask.NameToLayer(groundLayerName) && playerRb.velocity.y < 0)
         {
             jumpCount = 0;
             isJump = true;
+            Debug.DrawRay(playerRb.position, Vector3.down, new Color(0, 1, 0));
+            RaycastHit2D rayHit = Physics2D.Raycast(playerRb.position, Vector3.down, 1, LayerMask.GetMask("Platform"));
+
+            if (rayHit.collider != null)
+            {
+                if (rayHit.distance < 0.5f)
+                    /*Debug.Log(rayHit.collider.name);*/
+                    anim.SetBool("isJumping", false);
+            }
             anim.SetBool("isJumping", false);
-            playerRb.gravityScale = 4; // 중력 값을 원래대로 복원
+            
+            
         }
     }
 
@@ -127,9 +153,16 @@ public class Player_Move : MonoBehaviour
         isDie =  true;
         
         playerRb.velocity = Vector2.zero;
+        capsuleCollider.enabled = false;
 
         anim.Play("Player_Death");
+
+        Invoke("GameOverCall", 3);
     }
     
-    
+    void GameOverCall()
+    {
+        gameManager.EndGame();
+    }
+
 }

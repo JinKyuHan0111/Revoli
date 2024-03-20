@@ -24,15 +24,26 @@ public class Player_Atk : MonoBehaviour
     float range_posX = 0f; //법위의 위치값
     float range_posY = 0f;
 
+    Animator anim;
+    Rigidbody2D playerRb;
+    Player_Move player;
+    private bool doubleAttackAble = false;
+    int AttackCount = 0;
 
     void Start()
     {
         playerStats = GetComponent<PlayerStats>();
+        anim = GetComponent<Animator>();
+        playerRb = GetComponent<Rigidbody2D>();
+        player = GetComponent<Player_Move>();
     }
 
     void Update()
     {
-        Atack();
+        if (Input.GetKeyDown(KeyCode.Q)& curTime <= 0)
+        {
+            Attack();
+        }
     }
     void HitRange_Setting(HitType hitType)
     {
@@ -63,12 +74,47 @@ public class Player_Atk : MonoBehaviour
             pos.localPosition = new Vector3(-range_posX, range_posY, pos.localPosition.z);
         }
     }
-    void Atack()
+    void Attack()
     {
-        if (curTime <= 0)
-        {
-            if (Input.GetKeyDown(KeyCode.Q))
+        AttackCount++;
+
+            switch (AttackCount)
             {
+                case 1:
+                    {
+                        player.isAttacking = true;
+
+                        HitRange_Setting(HitType.BasicAttack);
+
+                        Atk_damage = playerStats.attackDamage;
+                        //Debug.Log("Z버튼 누름 & curTime <=0 작동 완료"); //체크 완료
+                        Collider2D[] collider2Ds = Physics2D.OverlapCapsuleAll(pos.position, CapsuleSize, capsuleDirection, transform.rotation.z);
+                        foreach (Collider2D collider in collider2Ds)
+                        {
+                            Debug.Log("Attack1");
+                        }
+
+                        playerRb.velocity = Vector2.zero;
+
+                        anim.SetTrigger("doAttack");
+
+                        curTime = coolTime;
+
+                        Invoke("EndAttack", 1);
+
+                    }
+                    break;
+
+                case 2:
+
+                    Invoke("DoubleAttack", 0.9f);
+
+                    break;                   
+            }
+            /*if (AttackCount == 1)
+            {
+                player.isAttacking = true;
+
                 HitRange_Setting(HitType.BasicAttack);
 
                 Atk_damage = playerStats.attackDamage;
@@ -76,30 +122,43 @@ public class Player_Atk : MonoBehaviour
                 Collider2D[] collider2Ds = Physics2D.OverlapCapsuleAll(pos.position, CapsuleSize, capsuleDirection, transform.rotation.z);
                 foreach (Collider2D collider in collider2Ds)
                 {
-                    Debug.Log(collider.tag);
+                    Debug.Log();
                 }
-                //animator.setTrigger("atk");
+                Debug.Log("Attack1");
+                
+                playerRb.velocity = Vector2.zero;
+                
+                anim.SetTrigger("doAttack");
+
                 curTime = coolTime;
+
+                Invoke("EndAttack", 0.5f);
+
             }
-            if (Input.GetKeyDown(KeyCode.W))
+            if (AttackCount == 2)
+            {
+                Invoke("DoubleAttack", 0.3f);
+
+            }*/
+                if (Input.GetKeyDown(KeyCode.W))
             {
                 HitRange_Setting(HitType.Skill_Prototype);
 
                 Atk_damage = playerStats.attackDamage;
                 //Debug.Log("Z버튼 누름 & curTime <=0 작동 완료"); //체크 완료
-                Collider2D[] collider2Ds = Physics2D.OverlapCapsuleAll(pos.position, CapsuleSize, capsuleDirection, transform.rotation.z);
+                /*Collider2D[] collider2Ds = Physics2D.OverlapCapsuleAll(pos.position, CapsuleSize, capsuleDirection, transform.rotation.z);
                 foreach (Collider2D collider in collider2Ds)
                 {
                     Debug.Log(collider.tag);
-                }
+                }*/
                 //animator.setTrigger("atk");
                 curTime = coolTime;
             }
-        }
-        else
+        
+        /*else
         {
             curTime -= Time.deltaTime;
-        }
+        }*/
     }
     // 아래 함수는 콜라이더의 윤곽선을 보여주기 위한 함수
     // 사용한 이후 주석 처리 예정
@@ -108,5 +167,35 @@ public class Player_Atk : MonoBehaviour
         Gizmos.color = Color.red;
         Gizmos.DrawWireCube(pos.position, CapsuleSize);
 
+    }
+
+    void EndAttack()
+    {
+        player.isAttacking = false;
+        AttackCount = 0;
+    }
+
+    void DoubleAttack()
+    {
+        player.isAttacking = true;
+
+        HitRange_Setting(HitType.BasicAttack);
+
+        Atk_damage = playerStats.attackDamage;
+        /*//Debug.Log("Z버튼 누름 & curTime <=0 작동 완료"); //체크 완료
+        Collider2D[] collider2Ds = Physics2D.OverlapCapsuleAll(pos.position, CapsuleSize, capsuleDirection, transform.rotation.z);
+        foreach (Collider2D collider in collider2Ds)
+        {
+            Debug.Log(collider.tag);
+        }*/
+        Debug.Log("Attack2");
+
+        playerRb.velocity = Vector2.zero;
+
+        anim.SetTrigger("doAttack2");
+
+        curTime = coolTime;
+
+        Invoke("EndAttack", 0.6f);
     }
 }
