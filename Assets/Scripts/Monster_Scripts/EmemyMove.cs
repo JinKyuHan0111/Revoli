@@ -8,9 +8,11 @@ public class EnemyMove : MonoBehaviour
     private GameObject targetObj;
     private Vector2 targetPos;
     public float speed;
+    private float fallSpeed=10f;
     private PlayerStats playerStats;
     private Health_Ctrl health_Ctrl;
     Rigidbody2D rigid;
+    
     
     EnemyManager enemyManager;
     Animator animator;
@@ -43,9 +45,16 @@ public class EnemyMove : MonoBehaviour
         {
             //Debug.Log("11");
             Vector2 direction = (target.position - transform.position).normalized;
-            direction.y = 0f;
-            rigid.MovePosition(rigid.position + direction * speed * Time.deltaTime);
-            //Debug.Log(rigid.velocity); //= 0,0,0 
+            direction.y = 0f; // Y값을 0으로 설정하여 영향을 받지 않도록 함
+
+            // X축 방향으로의 이동
+            Vector2 horizontalMovement = new Vector2(direction.x * speed * Time.deltaTime, 0f);
+            // Y축 방향으로의 이동 (빠르게 떨어지도록 함)
+            Vector2 verticalMovement = new Vector2(0f, -fallSpeed * Time.deltaTime);
+
+            // 현재 위치에 이동량을 더하여 새로운 위치 계산
+            Vector2 newPosition = (Vector2)transform.position + horizontalMovement + verticalMovement;
+            rigid.MovePosition(newPosition);
             if (direction.x > 0.1f)
             {
                 spriteRenderer.flipX =false;
