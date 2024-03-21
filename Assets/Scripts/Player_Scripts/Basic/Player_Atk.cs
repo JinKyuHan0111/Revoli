@@ -4,7 +4,8 @@ using UnityEngine;
 
 public enum HitType
 {
-    BasicAttack,
+    BasicAttack0,
+    BasicAttack1,
     Skill_Prototype,
     Etc
 }
@@ -15,16 +16,28 @@ public class Player_Atk : MonoBehaviour
     private float Atk_damage = 0f;
     private PlayerStats playerStats;
 
-    [Header("쿨타임 관련 변수")]
-    private float curTime = 0f;
-    public float coolTime = 0.5f;
-
     [Header("공격판정 관련 변수")]
     public Transform pos;
-    [SerializeField] private Vector2 CapsuleSize;
+    [SerializeField]private HitType[] rangeNames = 
+    {
+        HitType.BasicAttack0,
+        HitType.BasicAttack1,
+        HitType.Skill_Prototype,
+        HitType.Etc
+    }; //보기 편하게 이름 지정
+    [Header("위 타입과 같은 순서")]
+    [SerializeField] private Vector2[] rangeValues = { 
+        new Vector2(0.5f, 0.5f),
+        new Vector2(0.8f, 0.5f),
+        new Vector2(3, 4f) 
+    };
     public CapsuleDirection2D capsuleDirection = CapsuleDirection2D.Vertical;
-    float range_posX = 0f;
-    float range_posY = 0f;
+    Vector2[] range_pos = {
+        new Vector2(0.15f, 0f),
+        new Vector2(0.2f, 0f),
+        new Vector2(0.15f, 0f) //나중지정
+    };
+    bool[] rangeBool = { false, false , false };
 
     Animator anim;
     Rigidbody2D playerRb;
@@ -39,16 +52,23 @@ public class Player_Atk : MonoBehaviour
         anim = GetComponent<Animator>();
         playerRb = GetComponent<Rigidbody2D>();
         player = GetComponent<Player_Move>();
+
+        for (int i = 0; i < rangeNames.Length; i++)
+        {
+            Debug.Log("Range Name : " + rangeNames[i] 
+                + ", Range Value : " + rangeValues[i]
+                + ", Range Pos : " + range_pos[i]);
+        }
     }
 
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.Q) && curTime <= 0 && doubleAttackAble == false)
+        if (Input.GetKeyDown(KeyCode.Q)&& doubleAttackAble == false)
         {
             Attack();
         }
        
-        if (Input.GetKeyDown(KeyCode.W) && curTime <= 0)
+        if (Input.GetKeyDown(KeyCode.W))
         {
             //Attack(HitType.Skill_Prototype);
         }
@@ -56,45 +76,28 @@ public class Player_Atk : MonoBehaviour
         {
             if (Input.GetKeyDown(KeyCode.Q))
             {
-                //Debug.Log("더블어택 조건 달성");
+                //Debug.Log("더블어택 조건 달성"); //체크 완료
                 DoubleAttack();
             }
         }
         if (Time.time - lastPressTime >2f && Time.time - lastPressTime <2.05f)
         {
-            Debug.Log("더블어택 시간 지나감");
+            //Debug.Log("더블어택 시간 지나감"); 체크완료
             Invoke("EndAttack", 0.03f);
             doubleAttackAble = false;
         }
     }
 
-    void HitRange_Setting(HitType hitType)
-    {
-        switch (hitType)
-        {
-            case HitType.BasicAttack:
-                CapsuleSize = new Vector2(1, 1.5f);
-                range_posX = 0.18f;
-                range_posY = 0f;
-                break;
-            case HitType.Skill_Prototype:
-                CapsuleSize = new Vector2(2, 3f);
-                range_posX = 0.28f;
-                range_posY = 0.167f;
-                break;
-        }
-        HitRangeCalc();
-    }
 
-    void HitRangeCalc()
+    void HitRangeCalc(HitType hitType)
     {
         if (pos.localPosition.x > 0)
         {
-            pos.localPosition = new Vector3(range_posX, range_posY, pos.localPosition.z);
+            pos.localPosition = new Vector3(range_pos[(int)hitType].x,range_pos[(int)hitType].y, pos.localPosition.z);
         }
-        else
+        else if (pos.localPosition.x < 0)
         {
-            pos.localPosition = new Vector3(-range_posX, range_posY, pos.localPosition.z);
+            pos.localPosition = new Vector3(-range_pos[(int)hitType].x, range_pos[(int)hitType].y, pos.localPosition.z);
         }
     }
 
@@ -102,20 +105,12 @@ public class Player_Atk : MonoBehaviour
     {
         if (player.isAttacking == false)
         {
-            player.isAttacking = true;
-            HitRange_Setting(HitType.BasicAttack);
+            HitRangeCalc(HitType.BasicAttack0);
+            AttackBase(HitType.BasicAttack0);
             player.can_Move = false;
-            Atk_damage = playerStats.attackDamage;
-            Collider2D[] collider2Ds = Physics2D.OverlapCapsuleAll(pos.position, CapsuleSize, capsuleDirection, transform.rotation.z);
-            foreach (Collider2D collider in collider2Ds)
-            {
-                Debug.Log("Attack1");
-            }
             anim.SetTrigger("doAttack");
-            curTime = coolTime;
 
         }
-        
     }
     public void FirAttackUse()
     {
@@ -126,20 +121,65 @@ public class Player_Atk : MonoBehaviour
 
     public void EndAttack()
     {
-        Debug.Log("AttackEnd");
+        //Debug.Log("AttackEnd"); 체크 완료
         player.isAttacking = false;
         player.can_Move = true;
     }
-
+    private void OnDrawGizmos() //범위 개발 내 시각화
+    {
+        for (int i = 0;i<rangeBool.Length; i++)
+        {
+            if (rangeBool[i]==true)
+            {
+                Gizmos.color = GetGizmosColor(rangeNames[i]);
+                Gizmos.DrawWireCube(pos.position, rangeValues[i]); // 해당 공격 범위를 그립니다.
+            }
+        }
+    }
+    private Color GetGizmosColor(HitType hitType)
+    {
+        switch (hitType)
+        {
+            case HitType.BasicAttack0:
+                return Color.red;
+            case HitType.BasicAttack1:
+                return Color.blue;
+            case HitType.Skill_Prototype:
+                return Color.green;
+            case HitType.Etc:
+                return Color.yellow;
+            default:
+                return Color.white;
+        }
+    }
     void DoubleAttack()
     {
+        HitRangeCalc(HitType.BasicAttack0);
         player.isAttacking = true;
-        HitRange_Setting(HitType.BasicAttack);
-        Atk_damage = playerStats.attackDamage;
-        Debug.Log("Attack2");
+        AttackBase(HitType.BasicAttack1);
         player.can_Move = false;
         anim.SetTrigger("doAttack2");
-        curTime = coolTime;
         doubleAttackAble = false;
+    }
+    void AttackBase(HitType hitType)
+    {
+        player.isAttacking = true;
+        Atk_damage = playerStats.attackDamage;
+        Collider2D[] collider2Ds = Physics2D.OverlapCapsuleAll(pos.position, rangeValues[(int)hitType], capsuleDirection, transform.rotation.z);
+        for (int i = 0; i < rangeNames.Length; i++) //공격범위 시각화 관련 후반부에 지워도 상관 X
+        {
+            if ((int)hitType == i)
+            {
+                rangeBool[i] = true;
+            }
+            else
+            {
+                rangeBool[i]=false;
+            }
+        }
+        foreach (Collider2D collider in collider2Ds)
+        {
+            Debug.Log("Attack");
+        }
     }
 }
