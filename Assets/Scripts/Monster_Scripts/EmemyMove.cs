@@ -1,72 +1,167 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
+using System.Collections;
 
 public class EnemyMove : MonoBehaviour
 {
     private Transform target;
     private GameObject targetObj;
     private Vector2 targetPos;
-    public float speed;
-    private float fallSpeed=10f;
+    private bool isDie = false;
     private PlayerStats playerStats;
+    private Player_Move playerMove;
     private Health_Ctrl health_Ctrl;
+    public bool FindPlayer = false; // 플레이어 찾았는지 확인
+    CapsuleCollider2D capsuleCollider;
     Rigidbody2D rigid;
-    
-    
-    EnemyManager enemyManager;
+
+
+    public int nextMove = 1; // 다음 행동 변수
+
+    Vector3 originalScale;
+
+    [Header("enemy 기초 스탯")]
+    public float speed = 5f; // 이동 속도
+    public float attackDamage = 10f; // 공격력
+    public float Enemy_MaxHp = 100f; //최대 체력
+
+
+
+    public float targetSpeed = 10f; // 일정한 속도
+    public float CurrentHp;
+    public Vector2 moveForce; //임시로 만들어둔 파일
+    public
+
     Animator animator;
     SpriteRenderer spriteRenderer;
 
+    // Start is called before the first frame update
     void Start()
     {
+        CurrentHp = Enemy_MaxHp;
         rigid = GetComponent<Rigidbody2D>();
         animator = GetComponent<Animator>();
         playerStats = GetComponent<PlayerStats>();
         health_Ctrl = GetComponent<Health_Ctrl>();
-        enemyManager = GetComponent<EnemyManager>();
-        spriteRenderer = GetComponent<SpriteRenderer>();
-        speed = enemyManager.moveSpeed;
-        //조건에 따라서 변하는 중력값이 아니면 오브젝트 내부에 적어서 할것
-        //rigid.gravityScale = 10f; // 중력 활성화
-
+        originalScale = transform.localScale;
     }
 
+    // Update is called once per frame
     void Update()
     {
-        
+        if (!FindPlayer)
+            BasicEMove();
+        else
+            EMove();
     }
-    //피드백
-    //외부스크립트에서 불러올것이 아니면 private 혹은 접근자를 쓰지 말것
-    //아래 이동 코드는 물리력인  velocity가 아닌 방향을 지정해준 vector2가 스프라이트의 방향을 바꿀수 있음
-    void EMove()
+
+    public void OnDemage(float dmg)
+    {
+        CurrentHp -= dmg;
+    }
+
+    public void OnDie()
+    {
+        if (CurrentHp < 0)
+        {
+            isDie = true;
+
+            rigid.velocity = Vector2.zero;
+            animator.Play("monster1_Dead");
+        }
+    }
+    public void BasicEMove()
+    {
+        //Move
+        MaintainSpeed(speed);
+
+        //Platform check(맵 앞이 낭떨어지면 뒤돌기 위해서 지형을 탐색)
+
+        //자신의 한 칸 앞 지형을 탐색해야하므로 position.x + nextMove(-1,1,0이므로 적절함)
+        Vector2 frontVec = new Vector2(rigid.position.x + nextMove * 0.7f, rigid.position.y);
+
+        //한칸 앞 부분아래 쪽으로 ray를 쏨
+        Debug.DrawRay(frontVec, Vector3.down, new Color(0, 1, 0));
+
+        //레이를 쏴서 맞은 오브젝트를 탐지 
+        RaycastHit2D raycast = Physics2D.Raycast(frontVec, Vector3.down, 1, LayerMask.GetMask("Ground"));
+
+        //탐지된 오브젝트가 null : 그 앞에 지형이 없음
+        if (raycast.collider == null)
+        {
+            // 벽을 감지하거나 땅이 없는 경우 방향을 전환합니다.
+            nextMove = nextMove * (-1);
+            FlipCharacterDirection();
+        }
+    }
+
+    public void EMove()
     {
         if (targetObj != null && targetObj.tag == "Player")
         {
-            //Debug.Log("11");
+            Debug.Log("추격중!");
+            FindPlayer = true;
             Vector2 direction = (target.position - transform.position).normalized;
-            direction.y = 0f; // Y값을 0으로 설정하여 영향을 받지 않도록 함
+            direction.y = 0f;
 
-            // X축 방향으로의 이동
-            Vector2 horizontalMovement = new Vector2(direction.x * speed * Time.deltaTime, 0f);
-            // Y축 방향으로의 이동 (빠르게 떨어지도록 함)
-            Vector2 verticalMovement = new Vector2(0f, -fallSpeed * Time.deltaTime);
+            MaintainSpeed(speed);
 
-            // 현재 위치에 이동량을 더하여 새로운 위치 계산
-            Vector2 newPosition = (Vector2)transform.position + horizontalMovement + verticalMovement;
-            rigid.MovePosition(newPosition);
+
             if (direction.x > 0.1f)
             {
-                spriteRenderer.flipX =false;
+                //오른쪽이라면 전환하지않음
+                transform.localScale = originalScale;
+                nextMove = 1;
+
             }
             else if (direction.x < -0.1f)
             {
-                spriteRenderer.flipX = true;
+                //왼쪽이라면 전환함
+                transform.localScale = new Vector2(-originalScale.x, originalScale.y);
+                nextMove = -1;
             }
         }
     }
 
-    void OnTriggerEnter2D(Collider2D collision)
+    private void MaintainSpeed(float targetSpeed)
+    {
+        // 현재 속도 측정
+        float currentSpeed = Mathf.Abs(rigid.velocity.x);
+        Debug.Log(currentSpeed);
+        // 현재 속도가 일정 속도 이하라면 추가적인 힘을 가하여 속도를 증가시킴
+        if (currentSpeed < targetSpeed)
+        {
+            // 캐릭터의 이동 방향 설정
+            float moveDirection = nextMove * speed;
+            moveForce = new Vector2(moveDirection, 0.1f);
+
+            // 힘을 가합니다.
+            rigid.velocity = moveForce;
+            if(currentSpeed == 0f)
+            {
+                rigid.AddForce(moveForce * moveDirection, ForceMode2D.Impulse);
+            }
+            Debug.Log(currentSpeed);
+
+        }
+        else
+        {
+            // 현재 속도가 일정 속도 이상이면 힘을 가하지 않음
+            rigid.velocity = new Vector2(nextMove * targetSpeed, rigid.velocity.y);
+        }
+    }
+
+    private void FlipCharacterDirection()
+    {
+        Vector3 newScale = transform.localScale;
+        newScale.x *= -1; // x 스케일을 반전시킴
+        transform.localScale = newScale;
+    }
+
+
+    //콜라인더 충돌 관련 로직들
+
+    public void OnTriggerEnter2D(Collider2D collision)
     {
         // 플레이어 태그 찾기
         if (collision.gameObject.CompareTag("Player"))
@@ -74,23 +169,54 @@ public class EnemyMove : MonoBehaviour
             targetObj = collision.gameObject;
             target = targetObj.transform;
             targetPos = targetObj.transform.position;
+
+            FindPlayer = true;
+            Debug.Log("플레이어 진입");
+        }
+
+
+    }
+
+
+    public void OnTriggerExit2D(Collider2D collision)
+    {
+        if (collision.gameObject.CompareTag("Player"))
+        {
+            rigid.velocity = Vector2.zero; // 속도 초기화
+            FindPlayer = false;
+            Debug.Log("플레이어 탈출");
         }
     }
 
-    void OnTriggerStay2D(Collider2D collision)
-    {
-        if (collision.gameObject.CompareTag("Player"))
-            EMove();
-    }
-    void ontriggerexit2d()
-    {
-        rigid.velocity = Vector2.zero; // 속도 초기화
-    }
 
-    void OnCollisionEnter2D(Collision2D collision)
+    public void OnCollisionEnter2D(Collision2D collision)
     {
         //충돌 시작 
         Debug.Log("충돌 시작!");
-       
+        //플레이어 충돌 
+        if (collision.gameObject.CompareTag("Player"))
+        {
+
+            Health_Ctrl healthCtrl = collision.gameObject.GetComponent<Health_Ctrl>();
+            if (healthCtrl != null)
+            {
+                // 데미지를 가하는 Take_Dmg 메서드 호출
+                healthCtrl.Take_Dmg(attackDamage);
+            }
+        }
+        //벽과 만났을때
+        else if (collision.gameObject.CompareTag("Ground") && !FindPlayer)
+        {
+            nextMove = nextMove * (-1);
+            FlipCharacterDirection();
+        }
+    }
+    public void OnCollisionStay2D(Collision2D collision)
+    {
+        if (collision.gameObject.CompareTag("Ground") && FindPlayer)
+        {
+            nextMove = nextMove * (-1);
+            FlipCharacterDirection();
+        }
     }
 }
