@@ -26,6 +26,11 @@ public class Player_Move : MonoBehaviour
 
     [SerializeField] private string groundLayerName = "Ground"; // 땅에 닿았는지 확인하기 위한 레이어 이름
 
+    private bool isDashing = false; // 대쉬 중인지 판단하는 변수
+    private float dashCooldown = 2.0f; // 대쉬 쿨타임
+    private float dashTimeLeft; // 대쉬 쿨타임을 측정하기 위한 타이머
+    private float dashDistance = 5f; // 대쉬 거리
+
 
     private void Start()
     {
@@ -36,6 +41,7 @@ public class Player_Move : MonoBehaviour
         player_Atk = GetComponent<Player_Atk>();
         anim = GetComponent<Animator>();
         gameManager = GetComponent<GameManager>();
+        dashTimeLeft = dashCooldown; // 대쉬 쿨타임 초기화
     }
 
     void Update()
@@ -46,8 +52,34 @@ public class Player_Move : MonoBehaviour
             Horizontal_Move();
             Jump();
         }
-    }
 
+        if (Input.GetKeyDown(KeyCode.W) && dashTimeLeft <= 0 && !isDashing)
+        {
+            StartCoroutine(Dash());
+        }
+
+        if (dashTimeLeft > 0)
+        {
+            dashTimeLeft -= Time.deltaTime;
+        }
+    }
+    //대쉬기능
+    IEnumerator Dash()
+    {
+        float originalGravity = playerRb.gravityScale; // 원래 중력값 저장
+        isDashing = true; // 대쉬 상태로 변경
+        playerRb.gravityScale = 0; // 대쉬 중 중력 영향 제거
+        Vector2 dashDirection = spriteRenderer.flipX ? Vector2.left : Vector2.right; // 대쉬 방향 결정
+
+        float dashSpeed = 300f; // 대쉬 속도값 조절해서 대쉬 거리 조절
+        playerRb.velocity = new Vector2(dashDirection.x * dashSpeed, playerRb.velocity.y); // 수평 방향 대쉬 속도 설정 및 현재 수직 속도 유지
+
+        yield return new WaitForSeconds(0.15f); // 대쉬 지속 시간, 필요에 따라 조정
+
+        playerRb.gravityScale = originalGravity; // 대쉬가 끝나면 즉시 중력값 복원
+        isDashing = false; // 대쉬 상태 해제
+        dashTimeLeft = dashCooldown; // 대쉬 쿨타임 리셋
+    }
     void Horizontal_Move()
     {
         // 플레이어의 수평 이동을 처리하는 메서드
