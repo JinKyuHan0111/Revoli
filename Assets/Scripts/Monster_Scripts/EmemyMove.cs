@@ -7,32 +7,37 @@ public class EnemyMove : MonoBehaviour
     private Transform target;
     private GameObject targetObj;
     private Vector2 targetPos;
-    public float speed = 5f;
+    public float speed;
     private PlayerStats playerStats;
     private Health_Ctrl health_Ctrl;
     Rigidbody2D rigid;
     
-    
+    EnemyManager enemyManager;
     Animator animator;
     SpriteRenderer spriteRenderer;
 
-    // Start is called before the first frame update
     void Start()
     {
         rigid = GetComponent<Rigidbody2D>();
         animator = GetComponent<Animator>();
         playerStats = GetComponent<PlayerStats>();
         health_Ctrl = GetComponent<Health_Ctrl>();
-        rigid.gravityScale = 10f; // 중력 활성화
+        enemyManager = GetComponent<EnemyManager>();
+        spriteRenderer = GetComponent<SpriteRenderer>();
+        speed = enemyManager.moveSpeed;
+        //조건에 따라서 변하는 중력값이 아니면 오브젝트 내부에 적어서 할것
+        //rigid.gravityScale = 10f; // 중력 활성화
+
     }
 
-    // Update is called once per frame
     void Update()
     {
         
     }
-
-    public void EMove()
+    //피드백
+    //외부스크립트에서 불러올것이 아니면 private 혹은 접근자를 쓰지 말것
+    //아래 이동 코드는 물리력인  velocity가 아닌 방향을 지정해준 vector2가 스프라이트의 방향을 바꿀수 있음
+    void EMove()
     {
         if (targetObj != null && targetObj.tag == "Player")
         {
@@ -40,18 +45,19 @@ public class EnemyMove : MonoBehaviour
             Vector2 direction = (target.position - transform.position).normalized;
             direction.y = 0f;
             rigid.MovePosition(rigid.position + direction * speed * Time.deltaTime);
-            if (rigid.velocity.x > 0.1f)
+            //Debug.Log(rigid.velocity); //= 0,0,0 
+            if (direction.x > 0.1f)
             {
-                transform.localScale = new Vector3(-1, 1, 1); // 오른쪽을 보고 있을 때 스프라이트를 뒤집음
+                spriteRenderer.flipX =false;
             }
-            else if (rigid.velocity.x < -0.1f)
+            else if (direction.x < -0.1f)
             {
-                transform.localScale = new Vector3(1, 1, 1); // 왼쪽을 보고 있을 때 스프라이트를 뒤집지 않음
+                spriteRenderer.flipX = true;
             }
         }
     }
 
-    public void OnTriggerEnter2D(Collider2D collision)
+    void OnTriggerEnter2D(Collider2D collision)
     {
         // 플레이어 태그 찾기
         if (collision.gameObject.CompareTag("Player"))
@@ -62,18 +68,17 @@ public class EnemyMove : MonoBehaviour
         }
     }
 
-    public void OnTriggerStay2D(Collider2D collision)
+    void OnTriggerStay2D(Collider2D collision)
     {
         if (collision.gameObject.CompareTag("Player"))
             EMove();
     }
-    public void ontriggerexit2d()
+    void ontriggerexit2d()
     {
         rigid.velocity = Vector2.zero; // 속도 초기화
     }
 
-
-    public void OnCollisionEnter2D(Collision2D collision)
+    void OnCollisionEnter2D(Collision2D collision)
     {
         //충돌 시작 
         Debug.Log("충돌 시작!");
