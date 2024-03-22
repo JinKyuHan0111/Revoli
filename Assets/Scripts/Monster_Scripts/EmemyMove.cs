@@ -12,6 +12,8 @@ public class EnemyMove : MonoBehaviour
     private Player_Move playerMove;
     private Health_Ctrl health_Ctrl;
     public bool FindPlayer = false; // 플레이어 찾았는지 확인
+    public bool isGround = false; // 
+
     CapsuleCollider2D capsuleCollider;
     Rigidbody2D rigid;
 
@@ -29,8 +31,7 @@ public class EnemyMove : MonoBehaviour
 
     public float targetSpeed = 10f; // 일정한 속도
     public float CurrentHp;
-    public Vector2 moveForce; //임시로 만들어둔 파일
-    public
+    public Vector2 moveForce; //임시로 만들어둔 
 
     Animator animator;
     SpriteRenderer spriteRenderer;
@@ -70,6 +71,27 @@ public class EnemyMove : MonoBehaviour
             animator.Play("monster1_Dead");
         }
     }
+
+    public void IsGround()
+    {
+        //자기 바로 아래에 탐색
+        Vector2 donw = new Vector2(rigid.position.x, rigid.position.y - 0.4f);
+
+        //한칸 앞 부분아래 쪽으로 ray를 쏨
+        Debug.DrawRay(donw, Vector3.down, new Color(0, 1, 0));
+
+        //레이를 쏴서 맞은 오브젝트를 탐지 
+        RaycastHit2D raycast = Physics2D.Raycast(donw, Vector3.down, 1, LayerMask.GetMask("Ground"));
+        if (raycast.collider != null)
+        {
+            isGround = true;
+        }
+        else
+        {
+            isGround= false;
+        }
+    }
+
     public void BasicEMove()
     {
         //Move
@@ -78,7 +100,7 @@ public class EnemyMove : MonoBehaviour
         //Platform check(맵 앞이 낭떨어지면 뒤돌기 위해서 지형을 탐색)
 
         //자신의 한 칸 앞 지형을 탐색해야하므로 position.x + nextMove(-1,1,0이므로 적절함)
-        Vector2 frontVec = new Vector2(rigid.position.x + nextMove * 0.7f, rigid.position.y);
+        Vector2 frontVec = new Vector2(rigid.position.x + nextMove * 0.4f, rigid.position.y);
 
         //한칸 앞 부분아래 쪽으로 ray를 쏨
         Debug.DrawRay(frontVec, Vector3.down, new Color(0, 1, 0));
@@ -87,9 +109,9 @@ public class EnemyMove : MonoBehaviour
         RaycastHit2D raycast = Physics2D.Raycast(frontVec, Vector3.down, 1, LayerMask.GetMask("Ground"));
 
         //탐지된 오브젝트가 null : 그 앞에 지형이 없음
-        if (raycast.collider == null)
+        if (raycast.collider == null && isGround)
         {
-            // 벽을 감지하거나 땅이 없는 경우 방향을 전환합니다.
+            //땅이 없는 경우 방향을 전환합니다.
             nextMove = nextMove * (-1);
             FlipCharacterDirection();
         }
@@ -125,10 +147,12 @@ public class EnemyMove : MonoBehaviour
 
     private void MaintainSpeed(float targetSpeed)
     {
+        //바닥 체크
+        IsGround();
         // 현재 속도 측정
         float currentSpeed = Mathf.Abs(rigid.velocity.x);
         // 현재 속도가 일정 속도 이하라면 추가적인 힘을 가하여 속도를 증가시킴
-        if (currentSpeed < targetSpeed)
+        if (currentSpeed < targetSpeed && isGround)
         {
             // 캐릭터의 이동 방향 설정
             float moveDirection = nextMove * speed;
@@ -202,11 +226,5 @@ public class EnemyMove : MonoBehaviour
                 healthCtrl.Take_Dmg(attackDamage);
             }
         }
-        //벽과 만났을때
-        /*else if (collision.gameObject.CompareTag("Ground") && !FindPlayer)
-        {
-            nextMove = nextMove * (-1);
-            FlipCharacterDirection();
-        }*/
     }
 }
