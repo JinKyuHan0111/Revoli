@@ -137,12 +137,13 @@ public class EnemyMove : MonoBehaviour
 
             // 힘을 가합니다.
             rigid.velocity = moveForce;
+            //만약 현재 속도가 0이라면 강제적으로 이동시킵니다
             if(currentSpeed == 0f)
             {
-                rigid.AddForce(moveForce * moveDirection, ForceMode2D.Impulse);
+                nextMove = nextMove * -1;
+                FlipCharacterDirection();
+                rigid.AddForce(moveForce * moveDirection * -1, ForceMode2D.Impulse);
             }
-            Debug.Log(currentSpeed);
-
         }
         else
         {
@@ -173,8 +174,6 @@ public class EnemyMove : MonoBehaviour
             FindPlayer = true;
             Debug.Log("플레이어 진입");
         }
-
-
     }
 
 
