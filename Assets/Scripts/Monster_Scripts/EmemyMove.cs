@@ -12,7 +12,8 @@ public class EnemyMove : MonoBehaviour
     private Player_Move playerMove;
     private Health_Ctrl health_Ctrl;
     public bool FindPlayer = false; // 플레이어 찾았는지 확인
-    public bool isGround = false; // 
+    public bool isGround = false; // 땅에 있는지 확인
+    public bool isDamage = false; // 몬스터가 데미지를 받고 있는지 확인
 
     CapsuleCollider2D capsuleCollider;
     Rigidbody2D rigid;
@@ -50,20 +51,37 @@ public class EnemyMove : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (!FindPlayer)
-            BasicEMove();
-        else
-            EMove();
+        OnDie();
+        if (!isDamage) { 
+            if (!FindPlayer)
+                BasicEMove();
+            else
+                EMove();
+        }
     }
 
-    public void OnDemage(float dmg)
+    public void OnDamage(float dmg)
     {
         CurrentHp -= dmg;
+
+        float moveDirection = nextMove * speed * -20;
+        Vector2 Force = new Vector2(moveDirection, 1f);
+
+        rigid.velocity = Force;
+        Invoke("IsDamage", 1);
+        isDamage = false;
+        animator.SetBool("doDamaged",true);
+    }
+
+    public void IsDamage()
+    {
+        Debug.Log("대미지 받는중");
+        isDamage = true;
     }
 
     public void OnDie()
     {
-        if (CurrentHp < 0)
+        if (CurrentHp < 0 && !isDie)
         {
             isDie = true;
 
@@ -121,11 +139,12 @@ public class EnemyMove : MonoBehaviour
     {
         if (targetObj != null && targetObj.tag == "Player")
         {
-            Debug.Log("추격중!");
+            
             FindPlayer = true;
             Vector2 direction = (target.position - transform.position).normalized;
             direction.y = 0f;
 
+            animator.SetBool("doDamaged", false);
             MaintainSpeed(speed);
 
 
@@ -151,6 +170,9 @@ public class EnemyMove : MonoBehaviour
         IsGround();
         // 현재 속도 측정
         float currentSpeed = Mathf.Abs(rigid.velocity.x);
+        //애니메이션을 위한 속도 주기
+        //걷는 애니메이션 추가
+
         // 현재 속도가 일정 속도 이하라면 추가적인 힘을 가하여 속도를 증가시킴
         if (currentSpeed < targetSpeed && isGround)
         {

@@ -170,7 +170,16 @@ public class Player_Atk : MonoBehaviour
         }
         foreach (Collider2D collider in collider2Ds)
         {
-            Debug.Log("Attack");
+            //Debug.Log("Attack");
+            if(collider.tag == "Enemy")
+            {
+                EnemyMove Enem = collider.gameObject.GetComponent<EnemyMove>();
+                if (Enem != null)
+                {
+                    Debug.Log("몬스터 공격");
+                    Enem.OnDamage(Atk_damage);
+                }
+            }
         }
     }
 }
