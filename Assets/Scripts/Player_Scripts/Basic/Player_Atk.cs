@@ -40,7 +40,6 @@ public class Player_Atk : MonoBehaviour
     bool[] rangeBool = { false, false , false };
 
     Animator anim;
-    Rigidbody2D playerRb;
     Player_Move player;
     private bool doubleAttackAble = false;
 
@@ -50,15 +49,8 @@ public class Player_Atk : MonoBehaviour
     {
         playerStats = GetComponent<PlayerStats>();
         anim = GetComponent<Animator>();
-        playerRb = GetComponent<Rigidbody2D>();
         player = GetComponent<Player_Move>();
 
-        for (int i = 0; i < rangeNames.Length; i++)
-        {
-            Debug.Log("Range Name : " + rangeNames[i] 
-                + ", Range Value : " + rangeValues[i]
-                + ", Range Pos : " + range_pos[i]);
-        }
     }
 
     void Update()
@@ -109,7 +101,6 @@ public class Player_Atk : MonoBehaviour
             AttackBase(HitType.BasicAttack0);
             player.can_Move = false;
             anim.SetTrigger("doAttack");
-
         }
     }
     public void FirAttackUse()

@@ -1,37 +1,46 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Burst.CompilerServices;
 using UnityEngine;
 
 public class Player_Move : MonoBehaviour
 {
-    private Rigidbody2D playerRb; // 플레이어의 Rigidbody2D 컴포넌트를 참조하기 위한 변수
-    private float move_Speed = 0f; // 플레이어의 이동 속도를 저장하는 변수
-    private float jumpForce = 0f; // 플레이어가 점프할 때 사용할 힘의 크기를 저장하는 변수
-    public bool can_Move = true; // 플레이어가 움직일 수 있는지 여부를 나타내는 변수. 스킬 사용 중이나 다른 상황에서 움직임을 제한하고 싶을 때 false로 설정
-    GameManager gameManager;
-    private Animator anim; //플레이어의 Animator 컴포넌트를 참조하기 위한 변수
-    private PlayerStats playerStats; // 플레이어의 스탯을 관리하는 컴포넌트의 참조
-    private Player_Atk player_Atk; // 플레이어의 공격을 관리하는 컴포넌트의 참조
-    CapsuleCollider2D capsuleCollider;
+    //스크립트
     Health_Ctrl health;
+    GameManager gameManager;
+    private Player_Atk player_Atk; // 플레이어의 공격을 관리하는 컴포넌트의 참조
+    private PlayerStats playerStats; // 플레이어의 스탯을 관리하는 컴포넌트의 참조
+
+    //참조관련
+    private Rigidbody2D playerRb; // 플레이어의 Rigidbody2D 컴포넌트를 참조하기 위한 변수
+    CapsuleCollider2D capsuleCollider;
+    private SpriteRenderer spriteRenderer; // 플레이어의 스프라이트를 관리하기 위한 컴포넌트 참조
+    private Animator anim; //플레이어의 Animator 컴포넌트를 참조하기 위한 변수
+
+    [Header("이동관련")]
+    private float move_Speed = 0f; // 플레이어의 이동 속도를 저장하는 변수
+    public bool can_Move = true; // 플레이어가 움직일 수 있는지 여부를 나타내는 변수. 스킬 사용 중이나 다른 상황에서 움직임을 제한하고 싶을 때 false로 설정
     public bool isAttacking = false; //공격시 움직임 멈추게 하기위한 변수
 
-    private SpriteRenderer spriteRenderer; // 플레이어의 스프라이트를 관리하기 위한 컴포넌트 참조
-    private int Look;//플레이어가 어느 위치를 바라보는지 알기 위한 변수
-    private bool isJump = true; // 현재 점프 가능한 상태인지를 나타내는 변수, 초기값은 true로 설정하여 시작부터 점프 가능
+    [Header("점프관련")]
     private int jumpCount = 0; // 현재 점프 횟수를 나타내는 변수
+    private float jumpForce = 0f; // 플레이어가 점프할 때 사용할 힘의 크기를 저장하는 변수
     private int maxJumpCount = 2; // 허용된 최대 점프 횟수를 나타내는 변수
-    private bool isDie = false; // 플레이어의 죽음확인 여부
     private bool prevMoveDirection; // 플레이어의 이전 이동 방향을 저장하는 변수, 스프라이트 반전을 위해 사용
-
     [SerializeField] private string groundLayerName = "Ground"; // 땅에 닿았는지 확인하기 위한 레이어 이름
 
-    private bool isDashing = false; // 대쉬 중인지 판단하는 변수
-    private float dashCooldown = 2.0f; // 대쉬 쿨타임
-    private float dashTimeLeft; // 대쉬 쿨타임을 측정하기 위한 타이머
-    private float dashDistance = 0f;
-    private float dashSpeed = 20f;
+    private bool isDie = false; // 플레이어의 죽음확인 여부
 
+    [Header("대쉬관련")]
+    private bool isDashing = false; // 대쉬 중인지 판단하는 변수
+    private bool canDash = true;
+    private float dashPower;
+    private float originDashPower=12f;
+    private float dashTime = 0.2f;
+    private float dashingCooldown = 1f;
+    [SerializeField] private TrailRenderer trailRenderer;
+    public float raycastDistance = 1f;
+    public LayerMask wallLayer;
 
     private void Start()
     {
@@ -42,56 +51,62 @@ public class Player_Move : MonoBehaviour
         player_Atk = GetComponent<Player_Atk>();
         anim = GetComponent<Animator>();
         gameManager = GetComponent<GameManager>();
-        dashTimeLeft = dashCooldown; // 대쉬 쿨타임 초기화
     }
 
     void Update()
     {
+        if(isDashing)
+        {
+            return;
+        }
         // 매 프레임마다 플레이어의 움직임과 점프 처리
         if (can_Move)
         {
             Horizontal_Move();
             Jump();
         }
-        if (spriteRenderer.flipX==true)
+        if (Input.GetKeyDown(KeyCode.W) && canDash)
         {
-            dashDistance = -5f;
-        }
-        else if (spriteRenderer.flipX == false)
-        {
-            dashDistance = 5f;
-        }
-        Debug.Log(dashDistance.ToString()); 
-        if (Input.GetKeyDown(KeyCode.W) && dashTimeLeft <= 0 && !isDashing)
-        {
+            Debug.Log("대쉬 누름");
             StartCoroutine(Dash());
         }
-
-        if (dashTimeLeft > 0)
-        {
-            dashTimeLeft -= Time.deltaTime;
-        }
     }
-    //대쉬기능
-    IEnumerator Dash()
+    private void FixedUpdate()
     {
-        isDashing = true; // 대쉬 시작
-
-        Vector3 startPos = transform.position; // 대쉬 시작 위치
-        Vector3 endPos = startPos + transform.right * dashDistance; // 대쉬 종료 위치
-
-        float startTime = Time.time; // 대쉬 시작 시간
-        while (transform.position != endPos)
+        if (isDashing)
         {
-            float distanceCovered = ((Time.time - startTime) * dashSpeed); // 대쉬가 진행된 거리
-            float fractionOfJourney = distanceCovered / Vector3.Distance(startPos, endPos); // 대쉬가 진행된 비율
-            transform.position = Vector3.Lerp(startPos, endPos, fractionOfJourney); // 대쉬 진행
-
-            yield return null;
+            return;
         }
-
-        isDashing = false; // 대쉬 종료
     }
+    private IEnumerator Dash()
+    {
+        canDash = false;
+        isDashing = true;
+        float originalGravity = playerRb.gravityScale;
+        playerRb.gravityScale = 0f;
+        dashPower = spriteRenderer.flipX? -originDashPower : originDashPower;
+        Vector2 dashVelocity = new Vector2(transform.localScale.x * dashPower, 0);
+        playerRb.velocity = dashVelocity;
+
+        // TrailRenderer 활성화
+        trailRenderer.emitting = true;
+
+        yield return new WaitForSeconds(dashTime);
+
+        // TrailRenderer 비활성화
+        trailRenderer.emitting = false;
+        playerRb.gravityScale = originalGravity;
+
+        // 대쉬 이후 움직일 수 있도록 플레이어의 속도를 초기화
+        playerRb.velocity = new Vector2(0,playerRb.velocity.y); //Vector2.zero
+
+        yield return new WaitForSeconds(0.2f); //초기화와 같이 대쉬 종료시에 점프가 초기화 되는 오류 해결용
+        isDashing = false; // 대쉬 종료
+
+        yield return new WaitForSeconds(dashingCooldown);
+        canDash = true;
+    }
+
     void Horizontal_Move()
     {
         // 플레이어의 수평 이동을 처리하는 메서드
@@ -129,7 +144,7 @@ public class Player_Move : MonoBehaviour
                     playerRb.velocity = new Vector2(move_Speed * (-1), playerRb.velocity.y);
             }
             //애니메이션 처리
-            if (Mathf.Abs(playerRb.velocity.x) > 3)
+            if (Mathf.Abs(playerRb.velocity.x) > 1)
             {
                 anim.SetBool("isWalking", true);
             }
@@ -179,17 +194,30 @@ public class Player_Move : MonoBehaviour
         //플레이어 콜라이더 전체가 Ground에 접촉시 더블점프 가능하게 하는것 방지
         if (collision.gameObject.layer == LayerMask.NameToLayer(groundLayerName) && playerRb.velocity.y < 0)
         {
-            isJump = true;
             Debug.DrawRay(playerRb.position, Vector3.down, new Color(0, 1, 0));
             RaycastHit2D rayHit = Physics2D.Raycast(playerRb.position, Vector3.down, 1.5f, LayerMask.GetMask("Ground"));
 
             if (rayHit.collider != null)
             {
-                if (rayHit.distance < 1)
+                if (rayHit.distance < 1 && !isDashing)
+                {
                     /*Debug.Log(rayHit.collider.name);*/
                     anim.SetBool("isJumping", false);
                     jumpCount = 0;
+                }
             }
+        }
+        if (collision.gameObject.layer != LayerMask.NameToLayer(groundLayerName))
+        {
+            jumpCount++;
+        }
+        RaycastHit hit;
+        if (Physics.Raycast(transform.position, transform.forward, out hit, raycastDistance, wallLayer))
+        {
+
+            Debug.Log("충돌");
+            playerRb.velocity= new Vector2(0,playerRb.velocity.y);
+            
         }
     }
 
