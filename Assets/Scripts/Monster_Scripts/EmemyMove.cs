@@ -127,7 +127,6 @@ public class EnemyMove : MonoBehaviour
     {
         // 현재 속도 측정
         float currentSpeed = Mathf.Abs(rigid.velocity.x);
-        Debug.Log(currentSpeed);
         // 현재 속도가 일정 속도 이하라면 추가적인 힘을 가하여 속도를 증가시킴
         if (currentSpeed < targetSpeed)
         {
@@ -138,7 +137,7 @@ public class EnemyMove : MonoBehaviour
             // 힘을 가합니다.
             rigid.velocity = moveForce;
             //만약 현재 속도가 0이라면 강제적으로 이동시킵니다
-            if(currentSpeed == 0f)
+            if(currentSpeed == 0f && !FindPlayer)
             {
                 nextMove = nextMove * -1;
                 FlipCharacterDirection();
@@ -204,18 +203,10 @@ public class EnemyMove : MonoBehaviour
             }
         }
         //벽과 만났을때
-        else if (collision.gameObject.CompareTag("Ground") && !FindPlayer)
+        /*else if (collision.gameObject.CompareTag("Ground") && !FindPlayer)
         {
             nextMove = nextMove * (-1);
             FlipCharacterDirection();
-        }
-    }
-    public void OnCollisionStay2D(Collision2D collision)
-    {
-        if (collision.gameObject.CompareTag("Ground") && FindPlayer)
-        {
-            nextMove = nextMove * (-1);
-            FlipCharacterDirection();
-        }
+        }*/
     }
 }
