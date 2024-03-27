@@ -4,9 +4,6 @@ using System.Collections;
 
 public class EnemyMove : MonoBehaviour
 {
-    private Transform target;
-    private GameObject targetObj;
-    private Vector2 targetPos;
     private bool isDie = false;
     private PlayerStats playerStats;
     private Player_Move playerMove;
@@ -30,21 +27,28 @@ public class EnemyMove : MonoBehaviour
     public float attackDamage; // 공격력
     public float Enemy_MaxHp; //최대 체력
 
-    public float detectionRange = 10f; // 탐색 범위
-
+    public float detectionRange = 3f; // 탐색 범위
+    public float knockback = 1f;
     public float targetSpeed = 10f; // 일정한 속도
     public float CurrentHp;
     public Vector2 moveForce; //임시로 만들어둔 
+    public float damageCooldown = 1.5f; // 플레이어 무적시간
+
+    public bool isPlayerDamaged = false;
+
+    private GameObject player;
 
     Animator animator;
     SpriteRenderer spriteRenderer;
 
     void Start()
     {
-        EnemyPool enemyPoolInstance = (EnemyPool)EnemyPool.Instance;
+        EnemyPool enemyPoolInstance = (EnemyPool)EnemyPool.Instance; 
         speed = enemyPoolInstance.GetEnemySpeed(EnemyName);
         Enemy_MaxHp = enemyPoolInstance.GetEnemyHealth(EnemyName);
         attackDamage = enemyPoolInstance.GetEnemyAtk(EnemyName);
+
+        player = GameObject.FindGameObjectWithTag("Player"); //플레이어 위치
 
         CurrentHp = Enemy_MaxHp;
         rigid = GetComponent<Rigidbody2D>();
@@ -61,6 +65,7 @@ public class EnemyMove : MonoBehaviour
             
             return;
         }
+        PlayerFind();
         OnDie();
         if (!isDamage && !isDie)
         {
@@ -69,6 +74,30 @@ public class EnemyMove : MonoBehaviour
             else
                 EMove();
         }
+    }
+
+    public void PlayerFind()
+    {
+        // 적 캐릭터와 플레이어 사이의 거리 계산
+        float distanceToPlayer = Vector2.Distance(transform.position, player.transform.position);
+
+        // 플레이어가 탐색 범위 내에 있는지 확인
+        if (distanceToPlayer <= detectionRange)
+        {
+            // 탐색 범위 내에 플레이어가 있으면 플레이어를 발견했다고 간주하고 시각화
+            FindPlayer = true;
+        }
+        else
+        {
+            FindPlayer = false;
+        }
+    }
+
+    private void OnDrawGizmosSelected()
+    {
+        // 적 캐릭터의 위치에서 탐색 범위를 시각화
+        Gizmos.color = Color.red;
+        Gizmos.DrawWireSphere(transform.position, detectionRange);
     }
 
     public void OnDamage(float dmg)
@@ -81,7 +110,7 @@ public class EnemyMove : MonoBehaviour
             Vector2 hitDirection = rigid.transform.position;
 
             // 넉백 효과를 주기 위해 힘의 방향을 역방향으로 설정
-            Vector2 knockbackForce = -hitDirection.normalized * dmg * nextMove * -1;
+            Vector2 knockbackForce = -hitDirection.normalized * knockback * nextMove * -1;
 
             // 넉백 힘을 추가
             rigid.velocity = knockbackForce;
@@ -112,10 +141,13 @@ public class EnemyMove : MonoBehaviour
     {
         if (CurrentHp < 0 && !isDie)
         {
+
             isDie = true;
 
             rigid.velocity = Vector2.zero;
             animator.Play("monster1_Dead");
+
+
         }
     }
 
@@ -165,17 +197,13 @@ public class EnemyMove : MonoBehaviour
 
     public void EMove()
     {
-        if (targetObj != null && targetObj.tag == "Player")
-        {
-
-            FindPlayer = true;
-            Vector2 direction = (target.position - transform.position).normalized;
+            Vector2 direction = (player.transform.position - transform.position).normalized;
             direction.y = 0f;
 
             animator.SetBool("doDamaged", false);
             MaintainSpeed(speed);
 
-
+            Debug.Log("1111");
             if (direction.x > 0.1f)
             {
                 //오른쪽이라면 전환하지않음
@@ -189,7 +217,7 @@ public class EnemyMove : MonoBehaviour
                 transform.localScale = new Vector2(-originalScale.x, originalScale.y);
                 nextMove = -1;
             }
-        }
+        
     }
 
     private void MaintainSpeed(float targetSpeed)
@@ -235,43 +263,17 @@ public class EnemyMove : MonoBehaviour
 
     //콜라인더 충돌 관련 로직들
 
-    public void OnTriggerEnter2D(Collider2D collision)
+
+    public void OnCollisionStay2D(Collision2D collision)
     {
-        // 플레이어 태그 찾기
-        if (collision.gameObject.CompareTag("Player"))
-        {
-            targetObj = collision.gameObject;
-            target = targetObj.transform;
-            targetPos = targetObj.transform.position;
-
-            FindPlayer = true;
-            Debug.Log("플레이어 진입");
-        }
-    }
-
-
-    public void OnTriggerExit2D(Collider2D collision)
-    {
-        if (collision.gameObject.CompareTag("Player"))
-        {
-            rigid.velocity = Vector2.zero; // 속도 초기화
-            FindPlayer = false;
-            Debug.Log("플레이어 탈출");
-        }
-    }
-
-
-    public void OnCollisionEnter2D(Collision2D collision)
-    {
-        //충돌 시작 
-        Debug.Log("충돌 시작!");
         //플레이어 충돌 
-        if (collision.gameObject.CompareTag("Player") && !isDie)
+        if (collision.gameObject.CompareTag("Player") && !isDie && !isPlayerDamaged)
         {
 
             Health_Ctrl healthCtrl = collision.gameObject.GetComponent<Health_Ctrl>(); //체력 참조
             Animator otherAnimator = collision.gameObject.GetComponent<Animator>(); // 애니메이션 참조
             Rigidbody2D playerRigidbody = collision.gameObject.GetComponent<Rigidbody2D>();// 플레이어 참조
+            
             if (healthCtrl != null)
             {
                 // 플레이어 위치
@@ -284,7 +286,19 @@ public class EnemyMove : MonoBehaviour
                 // 데미지를 가하는 Take_Dmg 메서드 호출
                 healthCtrl.Take_Dmg(attackDamage);
                 otherAnimator.SetTrigger("doDamaged");
+
+                isPlayerDamaged = true;
+                StartCoroutine(InvincibilityCooldownCoroutine());
             }
         }
+    }
+
+    private IEnumerator InvincibilityCooldownCoroutine()
+    {
+        // 데미지 쿨다운 시간 동안 대기
+        yield return new WaitForSeconds(damageCooldown);
+
+        // 데미지 쿨다운 후 플레이어 피격 상태 해제
+        isPlayerDamaged = false;
     }
 }
