@@ -106,14 +106,14 @@ public class Player_Move : MonoBehaviour
         yield return new WaitForSeconds(dashingCooldown);
         canDash = true;
     }
-
+    float horizontal;
     void Horizontal_Move()
     {
         // 플레이어의 수평 이동을 처리하는 메서드
         if (playerStats != null)
         {
             move_Speed = playerStats.moveSpeed;
-            float horizontal = Input.GetAxis("Horizontal");
+            horizontal = Input.GetAxis("Horizontal");
             bool currentMoveDirection = horizontal > 0f ? false : (horizontal < 0f ? true : prevMoveDirection);
 
             // 스프라이트 방향 전환 로직
@@ -151,6 +151,7 @@ public class Player_Move : MonoBehaviour
             else
             {
                 anim.SetBool("isWalking", false);
+                horizontal = 0;
             }
         }
     }
@@ -188,7 +189,20 @@ public class Player_Move : MonoBehaviour
             jumpCount = 0;
         }
     }
-
+    private void OnCollisionExit2D(Collision2D collision)
+    {
+        if (collision.gameObject.layer == LayerMask.NameToLayer(groundLayerName) && !anim.GetBool("isJumping"))
+        {
+            if (playerRb.velocity.y <= 0 && horizontal != 0)
+            {
+                jumpCount++;
+            }
+            else if (playerRb.velocity.x != 0)
+            {
+                jumpCount++;
+            }
+        }
+    }
     private void OnCollisionEnter2D(Collision2D collision)
     {
         //플레이어 콜라이더 전체가 Ground에 접촉시 더블점프 가능하게 하는것 방지
@@ -207,15 +221,11 @@ public class Player_Move : MonoBehaviour
                 }
             }
         }
-        if (collision.gameObject.layer != LayerMask.NameToLayer(groundLayerName))
-        {
-            jumpCount++;
-        }
         RaycastHit hit;
         if (Physics.Raycast(transform.position, transform.forward, out hit, raycastDistance, wallLayer))
         {
 
-            Debug.Log("충돌");
+            //Debug.Log("충돌"); 체크 완료
             playerRb.velocity= new Vector2(0,playerRb.velocity.y);
             
         }
