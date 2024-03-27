@@ -23,10 +23,12 @@ public class EnemyMove : MonoBehaviour
 
     Vector3 originalScale;
 
+    [Header("적 이름")]
+    public string EnemyName; //적 이름
     [Header("enemy 기초 스탯")]
-    public float speed = 5f; // 이동 속도
-    public float attackDamage = 10f; // 공격력
-    public float Enemy_MaxHp = 100f; //최대 체력
+    public float speed; // 이동 속도
+    public float attackDamage; // 공격력
+    public float Enemy_MaxHp; //최대 체력
 
 
 
@@ -37,9 +39,13 @@ public class EnemyMove : MonoBehaviour
     Animator animator;
     SpriteRenderer spriteRenderer;
 
-    // Start is called before the first frame update
     void Start()
     {
+        EnemyPool enemyPoolInstance = (EnemyPool)EnemyPool.Instance;
+        speed = enemyPoolInstance.GetEnemySpeed(EnemyName);
+        Enemy_MaxHp = enemyPoolInstance.GetEnemyHealth(EnemyName);
+        attackDamage = enemyPoolInstance.GetEnemyAtk(EnemyName);
+
         CurrentHp = Enemy_MaxHp;
         rigid = GetComponent<Rigidbody2D>();
         animator = GetComponent<Animator>();
@@ -48,11 +54,14 @@ public class EnemyMove : MonoBehaviour
         originalScale = transform.localScale;
     }
 
-    // Update is called once per frame
     void Update()
     {
+        if(isDie)
+        {
+            return;
+        }
         OnDie();
-        if (!isDamage) { 
+        if (!isDamage && !isDie) { 
             if (!FindPlayer)
                 BasicEMove();
             else
