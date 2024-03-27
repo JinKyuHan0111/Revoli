@@ -42,6 +42,10 @@ public class Player_Move : MonoBehaviour
     public float raycastDistance = 1f;
     public LayerMask wallLayer;
 
+    [Header("움직임 관련")]
+    public GameObject area;
+    private BoxCollider2D areaBounds;
+
     private void Start()
     {
         // 시작 시 컴포넌트들을 가져오는 작업
@@ -51,6 +55,7 @@ public class Player_Move : MonoBehaviour
         player_Atk = GetComponent<Player_Atk>();
         anim = GetComponent<Animator>();
         gameManager = GetComponent<GameManager>();
+        areaBounds = area.GetComponent<BoxCollider2D>();
     }
 
     void Update()
@@ -70,6 +75,17 @@ public class Player_Move : MonoBehaviour
             Debug.Log("대쉬 누름");
             StartCoroutine(Dash());
         }
+
+        // 플레이어 위치를 영역 내로 제한
+        Vector3 clampedPosition = transform.position;
+        clampedPosition.x = Mathf.Clamp(clampedPosition.x, areaBounds.bounds.min.x, areaBounds.bounds.max.x);
+        clampedPosition.y = Mathf.Clamp(clampedPosition.y, areaBounds.bounds.min.y, areaBounds.bounds.max.y);
+
+        transform.position = clampedPosition;
+        if (transform.position != clampedPosition)
+        {
+            playerRb.velocity = new Vector2(0,playerRb.velocity.y);
+        }
     }
     private void FixedUpdate()
     {
@@ -77,6 +93,8 @@ public class Player_Move : MonoBehaviour
         {
             return;
         }
+
+
     }
     private IEnumerator Dash()
     {
