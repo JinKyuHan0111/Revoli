@@ -124,6 +124,7 @@ public class Player_Move : MonoBehaviour
         yield return new WaitForSeconds(dashingCooldown);
         canDash = true;
     }
+
     float horizontal;
     void Horizontal_Move()
     {
@@ -163,20 +164,41 @@ public class Player_Move : MonoBehaviour
             }
             //애니메이션 처리
             if (Mathf.Abs(playerRb.velocity.x) > 1)
-            {
+            { 
                 anim.SetBool("isWalking", true);
+
+                if (playerRb.velocity.y < -1.5f)
+                {
+                    anim.SetBool("isLanding", true);
+                }
+                else if(playerRb.velocity.y == 0)
+                {
+                    anim.SetBool("isLanding", false);
+                    anim.SetBool("isJumping", false);
+                }
             }
             else
             {
                 anim.SetBool("isWalking", false);
+
+                if (playerRb.velocity.y < -1.5f)
+                {
+                    anim.SetBool("isLanding", true);
+                }
+                else if (playerRb.velocity.y == 0)
+                {
+                    anim.SetBool("isLanding", false);
+                    anim.SetBool("isJumping", false);
+                    jumpCount = 0;
+                }
                 horizontal = 0;
             }
         }
     }
-        void OnDamaged()
+    public void OnDamaged(float dmg)
     {
         //Heath Down
-        health.Take_Dmg(5f);// 임시 몬스터 피격 데미지(proto-type)
+        health.Take_Dmg(dmg);// 임시 몬스터 피격 데미지(proto-type)
 
         anim.SetTrigger("doDamaged");
     }
@@ -186,7 +208,7 @@ public class Player_Move : MonoBehaviour
 
     }
 
-   void Jump()
+    void Jump()
     {
         if (playerStats != null && Input.GetKeyDown(KeyCode.Space) && jumpCount < maxJumpCount)
         {
@@ -194,6 +216,19 @@ public class Player_Move : MonoBehaviour
 
             //애니메이션 처리
             anim.SetBool("isJumping", true);
+            anim.SetBool("isLanding", false);
+
+            if(playerRb.velocity.y < -1.5f)
+            {
+                anim.SetBool("isJumping", true);
+                anim.SetBool("isLanding", true);
+            }
+            else if(playerRb.velocity.y == 0)
+            {
+                anim.SetBool("isJumping", false);
+                anim.SetBool("isLanding", false);
+                jumpCount = 0;
+            }
 
             playerRb.velocity = new Vector2(playerRb.velocity.x, -0.5f); // 수직 속도 초기화
             playerRb.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
@@ -201,12 +236,8 @@ public class Player_Move : MonoBehaviour
 
             // 다른 조건(예: 땅에 닿음)에서 중력 값을 원래대로 복원
         }
-
-        if(playerRb.velocity.y == 0) {
-            anim.SetBool("isJumping", false);
-            jumpCount = 0;
-        }
     }
+
     private void OnCollisionExit2D(Collision2D collision)
     {
         if (collision.gameObject.layer == LayerMask.NameToLayer(groundLayerName) && !anim.GetBool("isJumping"))
@@ -221,6 +252,7 @@ public class Player_Move : MonoBehaviour
             }
         }
     }
+
     private void OnCollisionEnter2D(Collision2D collision)
     {
         //플레이어 콜라이더 전체가 Ground에 접촉시 더블점프 가능하게 하는것 방지
@@ -235,15 +267,17 @@ public class Player_Move : MonoBehaviour
                 {
                     /*Debug.Log(rayHit.collider.name);*/
                     anim.SetBool("isJumping", false);
+                    anim.SetBool("isLanding", false);
                     jumpCount = 0;
                 }
             }
         }
+
         RaycastHit hit;
         if (Physics.Raycast(transform.position, transform.forward, out hit, raycastDistance, wallLayer))
         {
 
-            //Debug.Log("충돌"); 체크 완료
+            //Debug.Log("충돌");
             playerRb.velocity= new Vector2(0,playerRb.velocity.y);
             
         }

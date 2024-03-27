@@ -4,9 +4,6 @@ using System.Collections;
 
 public class EnemyMove : MonoBehaviour
 {
-    private Transform target;
-    private GameObject targetObj;
-    private Vector2 targetPos;
     private bool isDie = false;
     private PlayerStats playerStats;
     private Player_Move playerMove;
@@ -30,21 +27,28 @@ public class EnemyMove : MonoBehaviour
     public float attackDamage; // 공격력
     public float Enemy_MaxHp; //최대 체력
 
-
-
+    public float detectionRange = 3f; // 탐색 범위
+    public float knockback = 1f;
     public float targetSpeed = 10f; // 일정한 속도
     public float CurrentHp;
     public Vector2 moveForce; //임시로 만들어둔 
+    public float damageCooldown = 1.5f; // 플레이어 무적시간
+
+    public bool isPlayerDamaged = false;
+
+    private GameObject player;
 
     Animator animator;
     SpriteRenderer spriteRenderer;
 
     void Start()
     {
-        EnemyPool enemyPoolInstance = (EnemyPool)EnemyPool.Instance;
+        EnemyPool enemyPoolInstance = (EnemyPool)EnemyPool.Instance; 
         speed = enemyPoolInstance.GetEnemySpeed(EnemyName);
         Enemy_MaxHp = enemyPoolInstance.GetEnemyHealth(EnemyName);
         attackDamage = enemyPoolInstance.GetEnemyAtk(EnemyName);
+
+        player = GameObject.FindGameObjectWithTag("Player"); //플레이어 위치
 
         CurrentHp = Enemy_MaxHp;
         rigid = GetComponent<Rigidbody2D>();
@@ -56,12 +60,15 @@ public class EnemyMove : MonoBehaviour
 
     void Update()
     {
-        if(isDie)
+        if (isDie)
         {
+            
             return;
         }
+        PlayerFind();
         OnDie();
-        if (!isDamage && !isDie) { 
+        if (!isDamage && !isDie)
+        {
             if (!FindPlayer)
                 BasicEMove();
             else
@@ -69,33 +76,78 @@ public class EnemyMove : MonoBehaviour
         }
     }
 
-    public void OnDamage(float dmg)
+    public void PlayerFind()
     {
-        CurrentHp -= dmg;
+        // 적 캐릭터와 플레이어 사이의 거리 계산
+        float distanceToPlayer = Vector2.Distance(transform.position, player.transform.position);
 
-        float moveDirection = nextMove * speed * -20;
-        Vector2 Force = new Vector2(moveDirection, 1f);
-
-        rigid.velocity = Force;
-        Invoke("IsDamage", 1);
-        isDamage = false;
-        animator.SetBool("doDamaged",true);
+        // 플레이어가 탐색 범위 내에 있는지 확인
+        if (distanceToPlayer <= detectionRange)
+        {
+            // 탐색 범위 내에 플레이어가 있으면 플레이어를 발견했다고 간주하고 시각화
+            FindPlayer = true;
+        }
+        else
+        {
+            FindPlayer = false;
+        }
     }
 
-    public void IsDamage()
+    private void OnDrawGizmosSelected()
     {
-        Debug.Log("대미지 받는중");
-        isDamage = true;
+        // 적 캐릭터의 위치에서 탐색 범위를 시각화
+        Gizmos.color = Color.red;
+        Gizmos.DrawWireSphere(transform.position, detectionRange);
+    }
+
+    public void OnDamage(float dmg)
+    {
+        if (!isDamage && !isDie)
+        {
+            CurrentHp -= dmg;
+
+            // 플레이어와 적 사이의 방향 벡터 계산
+            Vector2 hitDirection = rigid.transform.position;
+
+            // 넉백 효과를 주기 위해 힘의 방향을 역방향으로 설정
+            Vector2 knockbackForce = -hitDirection.normalized * knockback * nextMove * -1;
+
+            // 넉백 힘을 추가
+            rigid.velocity = knockbackForce;
+
+            // 애니메이션이 실행 중이 아니라면 실행
+            animator.SetTrigger("doDmg");
+
+            // 대미지 상태 설정
+            isDamage = true;
+
+            // 대미지 후 일정 시간이 지나면 대미지 상태를 해제하는 Coroutine 호출
+            StartCoroutine(ResetDamageStateCoroutine(1f));
+        }
+    }
+
+    private IEnumerator ResetDamageStateCoroutine(float delay)
+    {
+        // 대미지 상태를 해제하는 대기
+        yield return new WaitForSeconds(delay);
+
+        // 대미지 상태 해제
+        isDamage = false;
+
+        Debug.Log("테스트");
     }
 
     public void OnDie()
     {
         if (CurrentHp < 0 && !isDie)
         {
+
             isDie = true;
 
             rigid.velocity = Vector2.zero;
             animator.Play("monster1_Dead");
+
+
         }
     }
 
@@ -115,7 +167,7 @@ public class EnemyMove : MonoBehaviour
         }
         else
         {
-            isGround= false;
+            isGround = false;
         }
     }
 
@@ -134,7 +186,6 @@ public class EnemyMove : MonoBehaviour
 
         //레이를 쏴서 맞은 오브젝트를 탐지 
         RaycastHit2D raycast = Physics2D.Raycast(frontVec, Vector3.down, 1, LayerMask.GetMask("Ground"));
-
         //탐지된 오브젝트가 null : 그 앞에 지형이 없음
         if (raycast.collider == null && isGround)
         {
@@ -146,17 +197,13 @@ public class EnemyMove : MonoBehaviour
 
     public void EMove()
     {
-        if (targetObj != null && targetObj.tag == "Player")
-        {
-            
-            FindPlayer = true;
-            Vector2 direction = (target.position - transform.position).normalized;
+            Vector2 direction = (player.transform.position - transform.position).normalized;
             direction.y = 0f;
 
             animator.SetBool("doDamaged", false);
             MaintainSpeed(speed);
 
-
+            Debug.Log("1111");
             if (direction.x > 0.1f)
             {
                 //오른쪽이라면 전환하지않음
@@ -170,7 +217,7 @@ public class EnemyMove : MonoBehaviour
                 transform.localScale = new Vector2(-originalScale.x, originalScale.y);
                 nextMove = -1;
             }
-        }
+        
     }
 
     private void MaintainSpeed(float targetSpeed)
@@ -192,7 +239,7 @@ public class EnemyMove : MonoBehaviour
             // 힘을 가합니다.
             rigid.velocity = moveForce;
             //만약 현재 속도가 0이라면 강제적으로 이동시킵니다
-            if(currentSpeed == 0f && !FindPlayer)
+            if (currentSpeed == 0f && !FindPlayer)
             {
                 nextMove = nextMove * -1;
                 FlipCharacterDirection();
@@ -216,46 +263,42 @@ public class EnemyMove : MonoBehaviour
 
     //콜라인더 충돌 관련 로직들
 
-    public void OnTriggerEnter2D(Collider2D collision)
+
+    public void OnCollisionStay2D(Collision2D collision)
     {
-        // 플레이어 태그 찾기
-        if (collision.gameObject.CompareTag("Player"))
-        {
-            targetObj = collision.gameObject;
-            target = targetObj.transform;
-            targetPos = targetObj.transform.position;
-
-            FindPlayer = true;
-            Debug.Log("플레이어 진입");
-        }
-    }
-
-
-    public void OnTriggerExit2D(Collider2D collision)
-    {
-        if (collision.gameObject.CompareTag("Player"))
-        {
-            rigid.velocity = Vector2.zero; // 속도 초기화
-            FindPlayer = false;
-            Debug.Log("플레이어 탈출");
-        }
-    }
-
-
-    public void OnCollisionEnter2D(Collision2D collision)
-    {
-        //충돌 시작 
-        Debug.Log("충돌 시작!");
         //플레이어 충돌 
-        if (collision.gameObject.CompareTag("Player"))
+        if (collision.gameObject.CompareTag("Player") && !isDie && !isPlayerDamaged)
         {
 
-            Health_Ctrl healthCtrl = collision.gameObject.GetComponent<Health_Ctrl>();
+            Health_Ctrl healthCtrl = collision.gameObject.GetComponent<Health_Ctrl>(); //체력 참조
+            Animator otherAnimator = collision.gameObject.GetComponent<Animator>(); // 애니메이션 참조
+            Rigidbody2D playerRigidbody = collision.gameObject.GetComponent<Rigidbody2D>();// 플레이어 참조
+            
             if (healthCtrl != null)
             {
+                // 플레이어 위치
+                Vector2 hitDirection = playerRigidbody.transform.position;
+
+                // 넉백 효과를 주기 위해 힘의 방향이니깐 몬스터 움직이는 방향으로 넉백
+                Vector2 knockbackForce = -hitDirection.normalized * attackDamage * nextMove;
+                playerRigidbody.AddForce(knockbackForce, ForceMode2D.Impulse);
+
                 // 데미지를 가하는 Take_Dmg 메서드 호출
                 healthCtrl.Take_Dmg(attackDamage);
+                otherAnimator.SetTrigger("doDamaged");
+
+                isPlayerDamaged = true;
+                StartCoroutine(InvincibilityCooldownCoroutine());
             }
         }
+    }
+
+    private IEnumerator InvincibilityCooldownCoroutine()
+    {
+        // 데미지 쿨다운 시간 동안 대기
+        yield return new WaitForSeconds(damageCooldown);
+
+        // 데미지 쿨다운 후 플레이어 피격 상태 해제
+        isPlayerDamaged = false;
     }
 }
