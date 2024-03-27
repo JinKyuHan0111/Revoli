@@ -30,7 +30,7 @@ public class EnemyMove : MonoBehaviour
     public float attackDamage; // 공격력
     public float Enemy_MaxHp; //최대 체력
 
-
+    public float detectionRange = 10f; // 탐색 범위
 
     public float targetSpeed = 10f; // 일정한 속도
     public float CurrentHp;
@@ -56,12 +56,14 @@ public class EnemyMove : MonoBehaviour
 
     void Update()
     {
-        if(isDie)
+        if (isDie)
         {
+            
             return;
         }
         OnDie();
-        if (!isDamage && !isDie) { 
+        if (!isDamage && !isDie)
+        {
             if (!FindPlayer)
                 BasicEMove();
             else
@@ -71,21 +73,39 @@ public class EnemyMove : MonoBehaviour
 
     public void OnDamage(float dmg)
     {
-        CurrentHp -= dmg;
+        if (!isDamage && !isDie)
+        {
+            CurrentHp -= dmg;
 
-        float moveDirection = nextMove * speed * -20;
-        Vector2 Force = new Vector2(moveDirection, 1f);
+            // 플레이어와 적 사이의 방향 벡터 계산
+            Vector2 hitDirection = rigid.transform.position;
 
-        rigid.velocity = Force;
-        Invoke("IsDamage", 1);
-        isDamage = false;
-        animator.SetBool("doDamaged",true);
+            // 넉백 효과를 주기 위해 힘의 방향을 역방향으로 설정
+            Vector2 knockbackForce = -hitDirection.normalized * dmg * nextMove * -1;
+
+            // 넉백 힘을 추가
+            rigid.velocity = knockbackForce;
+
+            // 애니메이션이 실행 중이 아니라면 실행
+            animator.SetTrigger("doDmg");
+
+            // 대미지 상태 설정
+            isDamage = true;
+
+            // 대미지 후 일정 시간이 지나면 대미지 상태를 해제하는 Coroutine 호출
+            StartCoroutine(ResetDamageStateCoroutine(1f));
+        }
     }
 
-    public void IsDamage()
+    private IEnumerator ResetDamageStateCoroutine(float delay)
     {
-        Debug.Log("대미지 받는중");
-        isDamage = true;
+        // 대미지 상태를 해제하는 대기
+        yield return new WaitForSeconds(delay);
+
+        // 대미지 상태 해제
+        isDamage = false;
+
+        Debug.Log("테스트");
     }
 
     public void OnDie()
@@ -115,7 +135,7 @@ public class EnemyMove : MonoBehaviour
         }
         else
         {
-            isGround= false;
+            isGround = false;
         }
     }
 
@@ -134,7 +154,6 @@ public class EnemyMove : MonoBehaviour
 
         //레이를 쏴서 맞은 오브젝트를 탐지 
         RaycastHit2D raycast = Physics2D.Raycast(frontVec, Vector3.down, 1, LayerMask.GetMask("Ground"));
-
         //탐지된 오브젝트가 null : 그 앞에 지형이 없음
         if (raycast.collider == null && isGround)
         {
@@ -148,7 +167,7 @@ public class EnemyMove : MonoBehaviour
     {
         if (targetObj != null && targetObj.tag == "Player")
         {
-            
+
             FindPlayer = true;
             Vector2 direction = (target.position - transform.position).normalized;
             direction.y = 0f;
@@ -192,7 +211,7 @@ public class EnemyMove : MonoBehaviour
             // 힘을 가합니다.
             rigid.velocity = moveForce;
             //만약 현재 속도가 0이라면 강제적으로 이동시킵니다
-            if(currentSpeed == 0f && !FindPlayer)
+            if (currentSpeed == 0f && !FindPlayer)
             {
                 nextMove = nextMove * -1;
                 FlipCharacterDirection();
@@ -247,14 +266,24 @@ public class EnemyMove : MonoBehaviour
         //충돌 시작 
         Debug.Log("충돌 시작!");
         //플레이어 충돌 
-        if (collision.gameObject.CompareTag("Player"))
+        if (collision.gameObject.CompareTag("Player") && !isDie)
         {
 
-            Health_Ctrl healthCtrl = collision.gameObject.GetComponent<Health_Ctrl>();
+            Health_Ctrl healthCtrl = collision.gameObject.GetComponent<Health_Ctrl>(); //체력 참조
+            Animator otherAnimator = collision.gameObject.GetComponent<Animator>(); // 애니메이션 참조
+            Rigidbody2D playerRigidbody = collision.gameObject.GetComponent<Rigidbody2D>();// 플레이어 참조
             if (healthCtrl != null)
             {
+                // 플레이어 위치
+                Vector2 hitDirection = playerRigidbody.transform.position;
+
+                // 넉백 효과를 주기 위해 힘의 방향이니깐 몬스터 움직이는 방향으로 넉백
+                Vector2 knockbackForce = -hitDirection.normalized * attackDamage * nextMove;
+                playerRigidbody.AddForce(knockbackForce, ForceMode2D.Impulse);
+
                 // 데미지를 가하는 Take_Dmg 메서드 호출
                 healthCtrl.Take_Dmg(attackDamage);
+                otherAnimator.SetTrigger("doDamaged");
             }
         }
     }

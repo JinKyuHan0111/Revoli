@@ -155,10 +155,10 @@ public class Player_Move : MonoBehaviour
             }
         }
     }
-        void OnDamaged()
+    public void OnDamaged(float dmg)
     {
         //Heath Down
-        health.Take_Dmg(5f);// 임시 몬스터 피격 데미지(proto-type)
+        health.Take_Dmg(dmg);// 임시 몬스터 피격 데미지(proto-type)
 
         anim.SetTrigger("doDamaged");
     }
