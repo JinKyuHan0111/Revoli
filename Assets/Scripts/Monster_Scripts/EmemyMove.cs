@@ -147,8 +147,16 @@ public class EnemyMove : MonoBehaviour
             rigid.velocity = Vector2.zero;
             animator.Play("monster1_Dead");
 
+            StartCoroutine(Die(1f));
 
         }
+    }
+
+    private IEnumerator Die(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+
+        Destroy(gameObject);
     }
 
     public void IsGround()
